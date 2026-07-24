@@ -805,9 +805,9 @@ store_eir2gam <- data.frame(time = output0$timestep)
 store_eir2ara <- data.frame(time = output0$timestep)
 store_eir2fun <- data.frame(time = output0$timestep)
 
-pyr_only_res_20 = read.csv("C:/Users/esherrar/Documents/RProjects/spatial-emanators_/data/ochomo 2024/pyr_only_res_20.csv")
-pyr_only_res_50 = read.csv("C:/Users/esherrar/Documents/RProjects/spatial-emanators/data/ochomo 2024/pyr_only_res_50.csv")
-pyr_pbo_res_80 = read.csv("C:/Users/esherrar/Documents/RProjects/spatial-emanators/data/ochomo 2024/pyr_PBO_res_80.csv")
+pyr_only_res_20 = read.csv("C:/Users/esherrar/Documents/RProjects/spatial-emanators/data/pyr_only_res_20.csv")
+pyr_only_res_50 = read.csv("C:/Users/esherrar/Documents/RProjects/spatial-emanators/data/pyr_only_res_50.csv")
+pyr_pbo_res_80 = read.csv("C:/Users/esherrar/Documents/RProjects/spatial-emanators/data/pyr_PBO_res_80.csv")
 # MSb = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/MSb_stan_model_output")
 
 ##############################
@@ -992,12 +992,12 @@ for(i in 1:50){
     bednetparams,
     timesteps = spatial_emanator_timesteps,
     coverages = rep(0.8, length(spatial_emanator_timesteps)), # # The first round covers 30% of the population and the second covers 80%. 
-    kse_in_a1 = matrix(c(rep(dtsens$Tbeta1[i],length(spatial_emanator_timesteps)),
-                         rep(dtsens$beta1[i],length(spatial_emanator_timesteps)),
-                         rep(dtsens$beta1[i],length(spatial_emanator_timesteps))), ncol=3), # Matrix of impact parameters indoors
-    kse_in_a2 = matrix(c(rep(dtsens$Tbeta2[i],length(spatial_emanator_timesteps)),
-                         rep(dtsens$beta2[i],length(spatial_emanator_timesteps)),
-                         rep(dtsens$beta2[i],length(spatial_emanator_timesteps))),ncol=3), # Matrix of impact parameters indoors
+    kse_in_a1 = matrix(c(rep(dtsens$Tfed_a1[i],length(spatial_emanator_timesteps)),
+                         rep(dtsens$fed_a1[i],length(spatial_emanator_timesteps)),
+                         rep(dtsens$fed_a1[i],length(spatial_emanator_timesteps))), ncol=3), # Matrix of impact parameters indoors
+    kse_in_a2 = matrix(c(rep(dtsens$Tfed_a2[i],length(spatial_emanator_timesteps)),
+                         rep(dtsens$fed_a2[i],length(spatial_emanator_timesteps)),
+                         rep(dtsens$fed_a2[i],length(spatial_emanator_timesteps))),ncol=3), # Matrix of impact parameters indoors
     dfse_in_a1 = matrix(c(rep(dtsens$Tfeddead_a1[i],length(spatial_emanator_timesteps)),
                           rep(dtsens$feddead_a1[i],length(spatial_emanator_timesteps)),
                           rep(dtsens$feddead_a1[i],length(spatial_emanator_timesteps))),ncol=3), # Matrix of impact parameters indoors
