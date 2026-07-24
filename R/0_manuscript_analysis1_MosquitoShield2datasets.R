@@ -805,7 +805,7 @@ store_eir2gam <- data.frame(time = output0$timestep)
 store_eir2ara <- data.frame(time = output0$timestep)
 store_eir2fun <- data.frame(time = output0$timestep)
 
-pyr_only_res_20 = read.csv("C:/Users/esherrar/Documents/RProjects/spatial-emanators/data/ochomo 2024/pyr_only_res_20.csv")
+pyr_only_res_20 = read.csv("C:/Users/esherrar/Documents/RProjects/spatial-emanators_/data/ochomo 2024/pyr_only_res_20.csv")
 pyr_only_res_50 = read.csv("C:/Users/esherrar/Documents/RProjects/spatial-emanators/data/ochomo 2024/pyr_only_res_50.csv")
 pyr_pbo_res_80 = read.csv("C:/Users/esherrar/Documents/RProjects/spatial-emanators/data/ochomo 2024/pyr_PBO_res_80.csv")
 # MSb = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/MSb_stan_model_output")
@@ -984,7 +984,7 @@ for(i in 1:50){
   store_eir1ara[[paste0("draw_",i)]] <- output1$EIR_arab
   store_eir1fun[[paste0("draw_",i)]] <- output1$EIR_fun
   
-  i_draw <- sample(x = 1:4000, size = 1, replace = FALSE)  # or sample a random draw if you like
+  # i_draw <- sample(x = 1:4000, size = 1, replace = FALSE)  # or sample a random draw if you like
   
   spatial_emanator_timesteps = round(seq(310+1095+1095, 310+1095+1095+730, by = 30),0) # Each round of Mosquito Shield spatial emanator is implemented in the 1st and second year.
   
@@ -992,30 +992,30 @@ for(i in 1:50){
     bednetparams,
     timesteps = spatial_emanator_timesteps,
     coverages = rep(0.8, length(spatial_emanator_timesteps)), # # The first round covers 30% of the population and the second covers 80%. 
-    kse_in_a1 = matrix(c(rep(dtsens$Tbeta1[i_draw],length(spatial_emanator_timesteps)),
-                         rep(dtsens$beta1[i_draw],length(spatial_emanator_timesteps)),
-                         rep(dtsens$beta1[i_draw],length(spatial_emanator_timesteps))), ncol=3), # Matrix of impact parameters indoors
-    kse_in_a2 = matrix(c(rep(dtsens$Tbeta2[i_draw],length(spatial_emanator_timesteps)),
-                         rep(dtsens$beta2[i_draw],length(spatial_emanator_timesteps)),
-                         rep(dtsens$beta2[i_draw],length(spatial_emanator_timesteps))),ncol=3), # Matrix of impact parameters indoors
-    dfse_in_a1 = matrix(c(rep(dtsens$Tfeddead_a1[i_draw],length(spatial_emanator_timesteps)),
-                          rep(dtsens$feddead_a1[i_draw],length(spatial_emanator_timesteps)),
-                          rep(dtsens$feddead_a1[i_draw],length(spatial_emanator_timesteps))),ncol=3), # Matrix of impact parameters indoors
-    dfse_in_a2 = matrix(c(rep(dtsens$Tfeddead_a2[i_draw],length(spatial_emanator_timesteps)),
-                          rep(dtsens$feddead_a2[i_draw],length(spatial_emanator_timesteps)),
-                          rep(dtsens$feddead_a2[i_draw],length(spatial_emanator_timesteps))),ncol=3), # Matrix of impact parameters indoors
-    dufse_in_a1 = matrix(c(rep(dtsens$Tunfeddead_a1[i_draw],length(spatial_emanator_timesteps)),
-                           rep(dtsens$unfeddead_a1[i_draw],length(spatial_emanator_timesteps)),
-                           rep(dtsens$unfeddead_a1[i_draw],length(spatial_emanator_timesteps))), ncol=3), # Matrix of impact parameters indoors
-    dufse_in_a2 = matrix(c(rep(dtsens$Tunfeddead_a2[i_draw],length(spatial_emanator_timesteps)),
-                           rep(dtsens$unfeddead_a2[i_draw],length(spatial_emanator_timesteps)),
-                           rep(dtsens$unfeddead_a2[i_draw],length(spatial_emanator_timesteps))),ncol=3), # Matrix of impact parameters indoors
-    detse_in_a1 = matrix(c(rep(dtsens$Tdet_a1[i_draw],length(spatial_emanator_timesteps)),
-                           rep(dtsens$det_a1[i_draw],length(spatial_emanator_timesteps)),
-                           rep(dtsens$det_a1[i_draw],length(spatial_emanator_timesteps))), ncol=3), # Matrix of impact parameters indoors
-    detse_in_a2 = matrix(c(rep(dtsens$Tdet_a2[i_draw],length(spatial_emanator_timesteps)),
-                           rep(dtsens$det_a2[i_draw],length(spatial_emanator_timesteps)),
-                           rep(dtsens$det_a2[i_draw],length(spatial_emanator_timesteps))),ncol=3) # Matrix of impact parameters indoors
+    kse_in_a1 = matrix(c(rep(dtsens$Tbeta1[i],length(spatial_emanator_timesteps)),
+                         rep(dtsens$beta1[i],length(spatial_emanator_timesteps)),
+                         rep(dtsens$beta1[i],length(spatial_emanator_timesteps))), ncol=3), # Matrix of impact parameters indoors
+    kse_in_a2 = matrix(c(rep(dtsens$Tbeta2[i],length(spatial_emanator_timesteps)),
+                         rep(dtsens$beta2[i],length(spatial_emanator_timesteps)),
+                         rep(dtsens$beta2[i],length(spatial_emanator_timesteps))),ncol=3), # Matrix of impact parameters indoors
+    dfse_in_a1 = matrix(c(rep(dtsens$Tfeddead_a1[i],length(spatial_emanator_timesteps)),
+                          rep(dtsens$feddead_a1[i],length(spatial_emanator_timesteps)),
+                          rep(dtsens$feddead_a1[i],length(spatial_emanator_timesteps))),ncol=3), # Matrix of impact parameters indoors
+    dfse_in_a2 = matrix(c(rep(dtsens$Tfeddead_a2[i],length(spatial_emanator_timesteps)),
+                          rep(dtsens$feddead_a2[i],length(spatial_emanator_timesteps)),
+                          rep(dtsens$feddead_a2[i],length(spatial_emanator_timesteps))),ncol=3), # Matrix of impact parameters indoors
+    dufse_in_a1 = matrix(c(rep(dtsens$Tunfeddead_a1[i],length(spatial_emanator_timesteps)),
+                           rep(dtsens$unfeddead_a1[i],length(spatial_emanator_timesteps)),
+                           rep(dtsens$unfeddead_a1[i],length(spatial_emanator_timesteps))), ncol=3), # Matrix of impact parameters indoors
+    dufse_in_a2 = matrix(c(rep(dtsens$Tunfeddead_a2[i],length(spatial_emanator_timesteps)),
+                           rep(dtsens$unfeddead_a2[i],length(spatial_emanator_timesteps)),
+                           rep(dtsens$unfeddead_a2[i],length(spatial_emanator_timesteps))),ncol=3), # Matrix of impact parameters indoors
+    detse_in_a1 = matrix(c(rep(dtsens$Tdet_a1[i],length(spatial_emanator_timesteps)),
+                           rep(dtsens$det_a1[i],length(spatial_emanator_timesteps)),
+                           rep(dtsens$det_a1[i],length(spatial_emanator_timesteps))), ncol=3), # Matrix of impact parameters indoors
+    detse_in_a2 = matrix(c(rep(dtsens$Tdet_a2[i],length(spatial_emanator_timesteps)),
+                           rep(dtsens$det_a2[i],length(spatial_emanator_timesteps)),
+                           rep(dtsens$det_a2[i],length(spatial_emanator_timesteps))),ncol=3) # Matrix of impact parameters indoors
     
   )
   
@@ -1033,25 +1033,24 @@ for(i in 1:50){
   store_eir2gam[[paste0("draw_",i)]] <- output2$EIR_gamb
   store_eir2ara[[paste0("draw_",i)]] <- output2$EIR_arab
   store_eir2fun[[paste0("draw_",i)]] <- output2$EIR_fun
-  
-  print(i_draw)
+
 }
-# saveRDS(store1,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store1")
-# saveRDS(store_inc1,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_inc1")
-# saveRDS(store_ara1,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_ara1")
-# saveRDS(store_gam1,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_gam1")
-# saveRDS(store_fun1,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_fun1")
-# saveRDS(store_eir1gam,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_eir1gam")
-# saveRDS(store_eir1ara,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_eir1ara")
-# saveRDS(store_eir1fun,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_eir1fun")
-# saveRDS(store2,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store2")
-# saveRDS(store_inc2,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_inc2")
-# saveRDS(store_ara2,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_ara2")
-# saveRDS(store_gam2,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_gam2")
-# saveRDS(store_fun2,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_fun2")
-# saveRDS(store_eir2gam,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_eir2gam")
-# saveRDS(store_eir2ara,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_eir2ara")
-# saveRDS(store_eir2fun,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_eir2fun")
+# saveRDS(store1,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store1")
+# saveRDS(store_inc1,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_inc1")
+# saveRDS(store_ara1,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_ara1")
+# saveRDS(store_gam1,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_gam1")
+# saveRDS(store_fun1,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_fun1")
+# saveRDS(store_eir1gam,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir1gam")
+# saveRDS(store_eir1ara,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir1ara")
+# saveRDS(store_eir1fun,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir1fun")
+# saveRDS(store2,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store2")
+# saveRDS(store_inc2,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_inc2")
+# saveRDS(store_ara2,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_ara2")
+# saveRDS(store_gam2,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_gam2")
+# saveRDS(store_fun2,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_fun2")
+# saveRDS(store_eir2gam,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir2gam")
+# saveRDS(store_eir2ara,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir2ara")
+# saveRDS(store_eir2fun,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir2fun")
 
 store1 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store1")
 store_inc1 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_inc1")

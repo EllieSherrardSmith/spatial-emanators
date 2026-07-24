@@ -8,7 +8,7 @@ library(boot)
 library(dplyr)
 set.seed(123)
 # install.packages("readxl") # CRAN version
-df_ento = readxl::read_excel("C:/Users/esherrar/Documents/RProjects/spatial-emanators/data/ochomo 2024/DiD-data.xlsx", sheet = "A_D4_HumanLandingRate")
+df_ento = readxl::read_excel("C:/Users/esherrar/Documents/RProjects/spatial-emanators/data/DiD-data.xlsx", sheet = "A_D4_HumanLandingRate")
 df_ento$date = as.Date(df_ento$date, format = "%d-%m-%y")
 df_ento$year = lubridate::year(df_ento$date)
 

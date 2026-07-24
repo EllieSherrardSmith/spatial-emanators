@@ -58,7 +58,7 @@ fit_site_parameters$severe_incidence_rendering_max_ages = c(10, 5, 15, 100, 100)
 
   ## From MAP data 31 July 2025
   ## ** Some mismatches exist in the names - correct these first
-map_Data <- read.csv("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulating projections for Unitaid/Subnational Unit-data MAP 31 July 2025.csv", header = TRUE)
+map_Data <- read.csv("C:/Users/esherrar/Documents/RProjects/spatial-emanators_1/simulating projections for Unitaid/Subnational Unit-data MAP 31 July 2025.csv", header = TRUE)
 sort(unique(KEN_df$sites$name_1))
 sort(unique(map_Data$Name[map_Data$ISO3 == "KEN"]))
 
@@ -194,8 +194,8 @@ legend("topleft", legend = c("ITN","SMC","Treatment","(with ACT)"),
 ##############################
 ##
 ## read in the extracted parameters from the statistical model
-sts = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/MSb_stan_model_outputNgufor") 
-stsT = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/MSbtanz_stan_model_outputTanzania")
+sts = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/MSb_stan_model_outputNgufor") 
+stsT = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/MSbtanz_stan_model_outputTanzania")
 ## pick a random row from these sims
 rr = sample(1:4000,size = 1,replace = FALSE)
 fed_a1 = sts$beta1[rr] + sts$beta3[rr]
