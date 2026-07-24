@@ -1052,23 +1052,23 @@ for(i in 1:50){
 # saveRDS(store_eir2ara,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir2ara")
 # saveRDS(store_eir2fun,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir2fun")
 
-store1 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store1")
-store_inc1 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_inc1")
-store_ara1 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_ara1")
-store_gam1 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_gam1")
-store_fun1 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_fun1")
-store_eir1gam = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_eir1gam")
-store_eir1ara = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_eir1ara")
-store_eir1fun = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_eir1fun")
+store1 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store1")
+store_inc1 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_inc1")
+store_ara1 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_ara1")
+store_gam1 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_gam1")
+store_fun1 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_fun1")
+store_eir1gam = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir1gam")
+store_eir1ara = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir1ara")
+store_eir1fun = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir1fun")
 
-store2 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store2")
-store_inc2 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_inc2")
-store_ara2 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_ara2")
-store_gam2 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_gam2")
-store_fun2 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_fun2")
-store_eir2gam = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_eir2gam")
-store_eir2ara = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_eir2ara")
-store_eir2fun = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/store_eir2fun")
+store2 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store2")
+store_inc2 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_inc2")
+store_ara2 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_ara2")
+store_gam2 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_gam2")
+store_fun2 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_fun2")
+store_eir2gam = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir2gam")
+store_eir2ara = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir2ara")
+store_eir2fun = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir2fun")
 
 
 plot(store_ara1[,2] ~ output1$timestep, type = "l", 
@@ -1115,17 +1115,17 @@ summary_fun = function(store_objectA,
   fc1 = ft1 = array(dim = c(365,3))
   
   for(t in 2501:2865){
-    fc1[t-2500,] = quantile(as.numeric(store_objectA[t,2:51]),c(0.05,0.5,0.95)) 
-    ft1[t-2500,] = quantile(as.numeric(store_objectB[t,2:51]),c(0.05,0.5,0.95))
+    fc1[t-2500,] = quantile(as.numeric(store_objectA[t,2:51]),c(0.05,0.5,0.95), na.rm = TRUE) 
+    ft1[t-2500,] = quantile(as.numeric(store_objectB[t,2:51]),c(0.05,0.5,0.95), na.rm = TRUE)
   }
   rel_low = (fc1[1:365,2] - ft1[1:365,1])/fc1[1:365,2]
   rel_mean = (fc1[1:365,2] - ft1[1:365,2])/fc1[1:365,2]
   rel_upp = (fc1[1:365,2] - ft1[1:365,3])/fc1[1:365,2]
   
   return(c(
-    mean(rel_mean),
-    mean(rel_upp),
-    mean(rel_low)
+    mean(rel_mean, na.rm = TRUE),
+    mean(rel_upp, na.rm = TRUE),
+    mean(rel_low, na.rm = TRUE)
   ))
 }
 summary_fun(store1,store2)
@@ -1142,17 +1142,17 @@ summary_fun_y2 = function(store_objectA,
   fc1 = ft1 = array(dim = c(365,3))
   
   for(t in 2866:3230){
-    fc1[t-2865,] = quantile(as.numeric(store_objectA[t,2:51]),c(0.05,0.5,0.95)) 
-    ft1[t-2865,] = quantile(as.numeric(store_objectB[t,2:51]),c(0.05,0.5,0.95))
+    fc1[t-2865,] = quantile(as.numeric(store_objectA[t,2:51]),c(0.05,0.5,0.95), na.rm = TRUE) 
+    ft1[t-2865,] = quantile(as.numeric(store_objectB[t,2:51]),c(0.05,0.5,0.95), na.rm = TRUE)
   }
   rel_low = (fc1[1:365,2] - ft1[1:365,1])/fc1[1:365,2]
   rel_mean = (fc1[1:365,2] - ft1[1:365,2])/fc1[1:365,2]
   rel_upp = (fc1[1:365,2] - ft1[1:365,3])/fc1[1:365,2]
   
   return(c(
-    mean(rel_mean),
-    mean(rel_upp),
-    mean(rel_low)
+    mean(rel_mean, na.rm = TRUE),
+    mean(rel_upp, na.rm = TRUE),
+    mean(rel_low, na.rm = TRUE)
   ))
 }
 summary_fun_y2(store1,store2)
@@ -1169,21 +1169,28 @@ summary_fun_both = function(store_objectA,
   fc1 = ft1 = array(dim = c(730,3))
   
   for(t in 2501:3230){
-    fc1[t-2500,] = quantile(as.numeric(store_objectA[t,2:51]),c(0.05,0.5,0.95)) 
-    ft1[t-2500,] = quantile(as.numeric(store_objectB[t,2:51]),c(0.05,0.5,0.95))
+    fc1[t-2500,] = quantile(as.numeric(store_objectA[t,2:51]),c(0.05,0.5,0.95), na.rm = TRUE) 
+    ft1[t-2500,] = quantile(as.numeric(store_objectB[t,2:51]),c(0.05,0.5,0.95), na.rm = TRUE)
   }
   rel_low = (fc1[1:730,2] - ft1[1:730,1])/fc1[1:730,2]
   rel_mean = (fc1[1:730,2] - ft1[1:730,2])/fc1[1:730,2]
   rel_upp = (fc1[1:730,2] - ft1[1:730,3])/fc1[1:730,2]
   
   return(c(
-    mean(rel_mean),
-    mean(rel_upp),
-    mean(rel_low)
+    mean(rel_mean, na.rm = TRUE),
+    mean(rel_upp, na.rm = TRUE),
+    mean(rel_low, na.rm = TRUE)
   ))
 }
+store_objectA = store_inc1
+store_objectB = store_inc2
+mean(fc1[1:730,2] - ft1[1:730,3])/mean(fc1[1:730,2])
+
 summary_fun_both(store1,store2)
 summary_fun_both(store_inc1,store_inc2)
+summary_fun_both(store_gam1,store_gam2)
+summary_fun_both(store_ara1,store_ara2)
+
 species = c("gambiae", "arabiensis", "funestus")
 reductions = c(summary_fun(store_gam1,store_gam2)[1], summary_fun(store_ara1,store_ara2)[1], summary_fun(store_fun1,store_fun2)[1], 
                summary_fun_y2(store_gam1,store_gam2)[1], summary_fun_y2(store_ara1,store_ara2)[1], summary_fun_y2(store_fun1,store_fun2)[1])
