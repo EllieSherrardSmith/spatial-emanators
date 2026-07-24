@@ -21,7 +21,8 @@ options(mc.cores = parallel::detectCores())
 
 ## organise data to be read into the model
 cleaner_baseA = function(data1,time_cap){
-  
+  ## For the Swai et al 2023 trial we later 
+  ## decide has contamination in controls so not using
   n_t = c(data1$total[data1$treatment_ID == 0],rep(100,5),
           data1$total[data1$treatment_ID == 1],rep(100,5))
   
@@ -60,8 +61,50 @@ cleaner_baseA = function(data1,time_cap){
     time = time)) 
 }
 
-cleaner_baseB = function(data1, data2, time_cap){
+cleaner_baseA = function(data1,time_cap){
+  ## For the Swai 2025  https://www.frontiersin.org/journals/malaria/articles/10.3389/fmala.2025.1570480/full
+  ## trial Mosquito shield data
   
+  n_t = c(data1$total[data1$treatment == 0],rep(100,5),
+          data1$total[data1$treatment == 1],rep(100,5))
+  
+  duf_t = c(data1$deadunfed24[data1$treatment == 0],rep(0,5),
+            data1$deadunfed24[data1$treatment == 1],rep(0,5))
+  
+  df_t = c(data1$deadfed24[data1$treatment == 0],rep(0,5),
+           data1$deadfed24[data1$treatment == 1],rep(0,5))
+  
+  fed_t = c(data1$alivefed24[data1$treatment == 0],rep(100,5),
+            data1$alivefed24[data1$treatment == 1],rep(100,5))
+  
+  unfed_t = n_t - duf_t - df_t - fed_t 
+  
+  deterrence = ifelse(c(data1$total[data1$treatment == 0] - data1$total[data1$treatment == 1])<0,0,
+                      c(data1$total[data1$treatment == 0] - data1$total[data1$treatment == 1]))
+  
+  deterrence_total = c(data1$total[data1$treatment == 0] + data1$total[data1$treatment == 1])
+  
+  treatments = c(data1$treatment[data1$treatment == 0],rep(0,5),
+                 data1$treatment[data1$treatment == 1],rep(1,5) )
+  
+    time = c(data1$time_index[data1$treatment == 0],rep(time_cap,5),
+           data1$time_index[data1$treatment == 1],rep(time_cap,5))
+  
+  return(list(  # if trying v3
+    N = length(n_t),
+    n_t = n_t,
+    duf_t = duf_t,
+    df_t = df_t,
+    fed_t = fed_t,
+    unfed_t = unfed_t,
+    deterrence = c(deterrence,rep(0,5),deterrence,rep(0,5)),
+    deterrence_total = c(deterrence_total,rep(100,5),deterrence_total,rep(100,5)),
+    treatments = treatments,
+    time = time)) 
+}
+
+cleaner_baseB = function(data1, data2, time_cap){
+  ## For Benin data
   n_t1 = c(data1$total[data1$treatment == 0],rep(100,5),
           data1$total[data1$treatment == 1],rep(100,5))
   
@@ -144,34 +187,34 @@ cleaner_baseB = function(data1, data2, time_cap){
 
 
 ## Sarah Moore
-dtaMS = readxl::read_excel("C:/Users/esherrar/OneDrive - LSTM/Spatial Repellent Review/SRs Systematic Review/data colated.xlsx", sheet = "Mosquito Shield-EHTs" )
-
+# dtaMS = readxl::read_excel("C:/Users/esherrar/OneDrive - LSTM/Spatial Repellent Review/SRs Systematic Review/data colated.xlsx", sheet = "Mosquito Shield-EHTs" )
+dtaMS = readxl::read_excel("C:/Users/esherrar/Documents/RProjects/spatial-emanators_1/data/Mosquito Shield_complied data_22 July 2026.xls", sheet = "mosquito shield_2022")
 dtaMS$date2 = lubridate::ymd(dtaMS$date)
 dtaMS <- dtaMS[order(dtaMS$date2), ]   # ensure sorted by date
 dtaMS$time_index <- as.integer(dtaMS$date2 - min(dtaMS$date2)) + 1
 
 for(i in 1:nrow(dtaMS)){
-  dtaMS$total[i] = dtaMS$`unfed alive 24`[i] + dtaMS$`fed alive 24`[i] +
-    dtaMS$`unfed dead 24`[i] + dtaMS$`fed dead 24`[i]
+  dtaMS$total[i] = dtaMS$aliveunfed24[i] + dtaMS$alivefed24[i] +
+    dtaMS$deadunfed24[i] + dtaMS$deadfed24[i]
 }
 
-dtaMS <- dtaMS[order(dtaMS$treatment_ID, 
+dtaMS <- dtaMS[order(dtaMS$treatment, 
                      dtaMS$time_index, 
                      dtaMS$species), ]
 
 dtaMS_summary <- dtaMS %>%
-  group_by(treatment_ID, time_index, species) %>%
+  group_by(treatment, time_index, species) %>%
   summarise(
-    across(c("unfed alive 24",
-             "fed alive 24",
-             "unfed dead 24",
-             "fed dead 24",
+    across(c("aliveunfed24",
+             "alivefed24",
+             "deadunfed24",
+             "deadfed24",
              total), sum, na.rm = TRUE)
   )
-
+dtaMS_summary = subset(dtaMS_summary, dtaMS_summary$species == "arabiensis")
 
 ##Ngufor (gambiae)
-dtbMS = readxl::read_excel("C:/Users/esherrar/Documents/RProjects/spatial-emanators/data/Ngufor - MosquitoShield EHT/Benin_Mosquito Shield_Hut data_CN.xlsx", sheet = "An. gambiae SMC" )
+dtbMS = readxl::read_excel("C:/Users/esherrar/Documents/RProjects/spatial-emanators_1/data/Ngufor - MosquitoShield EHT/Benin_Mosquito Shield_Hut data_CN.xlsx", sheet = "An. gambiae SMC" )
 
 dtbMS1 = subset(dtbMS, dtbMS$timepoint == "a.0 month")
 dtbMS2 = subset(dtbMS, dtbMS$timepoint == "b.4 months")
@@ -233,6 +276,7 @@ probf = ms_data$fed_t[ms_data$treatments == 1] / ms_data$n_t[ms_data$treatments 
 probdet = ms_data$deterrence[ms_data$treatments == 1] / ms_data$deterrence_total[ms_data$treatments == 1]
 times_plot = ms_data$time[ms_data$treatments == 1 ]
 
+
 probufdB1 = ms_datb$duf_t1[ms_datb$treatments1 == 1] / ms_datb$n_t1[ms_datb$treatments1 == 1]
 probfdB1 = ms_datb$df_t1[ms_datb$treatments1 == 1] / ms_datb$n_t1[ms_datb$treatments1 == 1]
 probfB1 = ms_datb$fed_t1[ms_datb$treatments1 == 1] / ms_datb$n_t1[ms_datb$treatments1 == 1]
@@ -260,9 +304,9 @@ times_plotB2C = ms_datb$time2[ms_datb$treatments2 == 0]
 plot(probdetB1 ~ times_plotB1)
 
 stan_MS <- stan(
-  # file = "C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan code/probability_estimates_srs_interaction_v3.stan",
-  file = "C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan code/probability_estimates_srs_interaction_v3_multistudy.stan",
-  # file = "C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan code/probability_estimates_srs_interaction_v4_multistudy.stan",
+  # file = "C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan_code/probability_estimates_srs_interaction_v3.stan",
+  file = "C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan_code/probability_estimates_srs_interaction_v3_multistudy.stan",
+  # file = "C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan_code/probability_estimates_srs_interaction_v4_multistudy.stan",
   data = ms_datb, 
   warmup = 2000,
   control = list(adapt_delta = 0.98,
@@ -270,9 +314,9 @@ stan_MS <- stan(
   iter = 3000, chains = 4)
 
 stan_MStanz <- stan(
-  file = "C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan code/probability_estimates_srs_interaction_v3.stan",
-  # file = "C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan code/probability_estimates_srs_interaction_v3_multistudy.stan",
-  # file = "C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan code/probability_estimates_srs_interaction_v4_multistudy.stan",
+  file = "C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan_code/probability_estimates_srs_interaction_v3.stan",
+  # file = "C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan_code/probability_estimates_srs_interaction_v3_multistudy.stan",
+  # file = "C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan_code/probability_estimates_srs_interaction_v4_multistudy.stan",
   data = ms_data,
   warmup = 2000,
   control = list(adapt_delta = 0.98,
@@ -290,8 +334,8 @@ summary(stan_MS, parameters = c("alpha1","alpha2","alpha3",
                                 "alphaf1","alphaf1","alphaf1",
                                 "beta1","beta2","beta3",
                                 "omega1","omega2"))
-# saveRDS(MSb, "C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/MSb_stan_model_outputNgufor")
-# saveRDS(MSbtanz, "C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/MSbtanz_stan_model_outputTanzania")
+# saveRDS(MSb, "C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/MSb_stan_model_outputNgufor")
+# saveRDS(MSbtanz, "C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/MSbtanz_stan_model_outputTanzania")
 time = 1:365 ## days
 # rstan::traceplot(stan_MS)
 
@@ -769,8 +813,8 @@ pyr_pbo_res_80 = read.csv("C:/Users/esherrar/Documents/RProjects/spatial-emanato
 ##############################
 ##
 ## read in the extracted parameters from the statistical model
-sts = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/MSb_stan_model_outputNgufor") 
-stsT = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/manuscript/simulations/MSbtanz_stan_model_outputTanzania")
+sts = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/MSb_stan_model_outputNgufor") 
+stsT = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/MSbtanz_stan_model_outputTanzania")
 ## pick a random row from these sims
 rr = sample(1:4000,size = 1,replace = FALSE)
 fed_a1 = sts$beta1[rr] + sts$beta3[rr]
