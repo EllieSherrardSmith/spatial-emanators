@@ -376,11 +376,11 @@ extract_params_f = function(p1,p2,p3){
     combo[i] = p1[i] + p3[i]
     
   }
-  combi = as.numeric(quantile(combo,c(0.1,0.5,0.9)))
-  a1 = as.numeric(quantile(p1,c(0.1,0.5,0.9)))
-  a2 = as.numeric(quantile(p2,c(0.1,0.5,0.9)))
+  combi = as.numeric(quantile(combo,c(0.025,0.5,0.975)))
+  a1 = as.numeric(quantile(p1,c(0.025,0.5,0.975)))
+  a2 = as.numeric(quantile(p2,c(0.025,0.5,0.975)))
   ## we want just the coef that indicates difference in outcome due to SE:
-  a3 = as.numeric(quantile(p3,c(0.1,0.5,0.9)))
+  a3 = as.numeric(quantile(p3,c(0.025,0.5,0.975)))
   
   return(list(combi,a1,a2,a3))
 }
@@ -388,8 +388,8 @@ mort_unfed = extract_params_f(MSb$alpha1,MSb$alpha2,MSb$alpha3)
 mort_fed = extract_params_f(MSb$alphaf1,MSb$alphaf2,MSb$alphaf3)
 successful_fed = extract_params_f(MSb$beta1,MSb$beta2,MSb$beta3)
 
-d1 = as.numeric(quantile(MSb$omega1,c(0.1,0.5,0.9)))
-d2 = as.numeric(quantile(MSb$omega2,c(0.1,0.5,0.9)))
+d1 = as.numeric(quantile(MSb$omega1,c(0.025,0.5,0.975)))
+d2 = as.numeric(quantile(MSb$omega2,c(0.025,0.5,0.975)))
 dettered = list(d1,d2)
 
 
@@ -1071,7 +1071,7 @@ store_eir2ara = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators
 store_eir2fun = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir2fun")
 
 
-plot(store_ara1[,2] ~ output1$timestep, type = "l", 
+plot(store_ara1[,2] ~ output0$timestep, type = "l", 
      col = "white",lwd = 2,
      xlim = c(2000,3400), ylim = c(0,400000),
      ylab = "Mosquito densities",
@@ -1082,8 +1082,8 @@ axis(1, at = seq(1,10*365,by = 365),labels = seq(2015,2024,by = 1))
 
 for(i in 1:50){
   
-  lines(store_ara1[,i+1] ~ output1$timestep, col = adegenet::transp("darkblue",0.2), lwd = 2)
-  lines(store_ara2[,i+1] ~ output1$timestep, col = adegenet::transp("darkred",0.2), lwd = 2)
+  lines(store_ara1[,i+1] ~ output0$timestep, col = adegenet::transp("darkblue",0.2), lwd = 2)
+  lines(store_ara2[,i+1] ~ output0$timestep, col = adegenet::transp("darkred",0.2), lwd = 2)
   lines(store_gam1[,i+1] ~ output0$timestep, col = adegenet::transp("blue",0.2), lwd = 1)
   lines(store_gam2[,i+1] ~ output0$timestep, col = adegenet::transp("red",0.2), lwd = 1)
   lines(store_fun1[,i+1] ~ output0$timestep, col = adegenet::transp("lightblue",0.2), lwd = 1)
@@ -1115,8 +1115,8 @@ summary_fun = function(store_objectA,
   fc1 = ft1 = array(dim = c(365,3))
   
   for(t in 2501:2865){
-    fc1[t-2500,] = quantile(as.numeric(store_objectA[t,2:51]),c(0.05,0.5,0.95), na.rm = TRUE) 
-    ft1[t-2500,] = quantile(as.numeric(store_objectB[t,2:51]),c(0.05,0.5,0.95), na.rm = TRUE)
+    fc1[t-2500,] = quantile(as.numeric(store_objectA[t,2:51]),c(0.025,0.5,0.975), na.rm = TRUE) 
+    ft1[t-2500,] = quantile(as.numeric(store_objectB[t,2:51]),c(0.025,0.5,0.975), na.rm = TRUE)
   }
   rel_low = (fc1[1:365,2] - ft1[1:365,1])/fc1[1:365,2]
   rel_mean = (fc1[1:365,2] - ft1[1:365,2])/fc1[1:365,2]
@@ -1142,8 +1142,8 @@ summary_fun_y2 = function(store_objectA,
   fc1 = ft1 = array(dim = c(365,3))
   
   for(t in 2866:3230){
-    fc1[t-2865,] = quantile(as.numeric(store_objectA[t,2:51]),c(0.05,0.5,0.95), na.rm = TRUE) 
-    ft1[t-2865,] = quantile(as.numeric(store_objectB[t,2:51]),c(0.05,0.5,0.95), na.rm = TRUE)
+    fc1[t-2865,] = quantile(as.numeric(store_objectA[t,2:51]),c(0.025,0.5,0.975), na.rm = TRUE) 
+    ft1[t-2865,] = quantile(as.numeric(store_objectB[t,2:51]),c(0.025,0.5,0.975), na.rm = TRUE)
   }
   rel_low = (fc1[1:365,2] - ft1[1:365,1])/fc1[1:365,2]
   rel_mean = (fc1[1:365,2] - ft1[1:365,2])/fc1[1:365,2]
@@ -1169,8 +1169,8 @@ summary_fun_both = function(store_objectA,
   fc1 = ft1 = array(dim = c(730,3))
   
   for(t in 2501:3230){
-    fc1[t-2500,] = quantile(as.numeric(store_objectA[t,2:51]),c(0.05,0.5,0.95), na.rm = TRUE) 
-    ft1[t-2500,] = quantile(as.numeric(store_objectB[t,2:51]),c(0.05,0.5,0.95), na.rm = TRUE)
+    fc1[t-2500,] = quantile(as.numeric(store_objectA[t,2:51]),c(0.025,0.5,0.975), na.rm = TRUE) 
+    ft1[t-2500,] = quantile(as.numeric(store_objectB[t,2:51]),c(0.025,0.5,0.975), na.rm = TRUE)
   }
   rel_low = (fc1[1:730,2] - ft1[1:730,1])/fc1[1:730,2]
   rel_mean = (fc1[1:730,2] - ft1[1:730,2])/fc1[1:730,2]
@@ -1184,7 +1184,7 @@ summary_fun_both = function(store_objectA,
 }
 store_objectA = store_inc1
 store_objectB = store_inc2
-mean(fc1[1:730,2] - ft1[1:730,3])/mean(fc1[1:730,2])
+# mean(fc1[1:730,2] - ft1[1:730,3])/mean(fc1[1:730,2])
 
 summary_fun_both(store1,store2)
 summary_fun_both(store_inc1,store_inc2)
@@ -1268,78 +1268,34 @@ mtext(labels[panel],
 
 #
 panel <- panel + 1
-plot(output1$prpf ~ output1$timestep, type = "l", 
-     col = "white",lwd = 2,
-     xlim = c(2000,3400), ylim = c(0,0.6),
-     ylab = "Model simulated estimate for prevalence in 0.5 - 10 years (%)",
-     xlab = "",xaxt = "n", yaxt = "n")
-axis(1, at = seq(1,10*365,by = 365),labels = seq(2015,2024,by = 1))
-axis(2, las = 2, at = seq(0,1,by = 0.2),labels = seq(0,100,by = 20))
-# lines(output1$prpf ~ output1$timestep, col = "blue", lwd = 2)
-abline(v = spatial_emanator_timesteps, lty = 2, col = "grey80")
-# abline(v = spatial_emanator_timesteps[1]+365, lty = 2, col = "grey80")
-# abline(v = spatial_emanator_timesteps[1]+365+365, lty = 2, col = "grey80")
-abline(v = bednetstimesteps, lty = 2, col = "grey30")
 
-for(i in 1:50){
-  
-  lines(store1[,i+1] ~ output1$timestep, col = adegenet::transp("blue",0.2), lwd = 2)
-  lines(store2[,i+1] ~ output0$timestep, col = adegenet::transp("darkred",0.2), lwd = 1)
-  
-}
-
-mtext(labels[panel],
-      side = 3, line = 0.5, adj = 0,
-      font = 2, cex = 1)
-
-## prevalence reductions
-quantile(unlist(store1[2501:2865,]),c(0.025,0.5,0.975))
-quantile(unlist(store2[2501:2865,]),c(0.025,0.5,0.975))
-
-(quantile(unlist(store1[2501:2865,]),0.5)-
-    quantile(unlist(store2[2501:2865,]),c(0.1,0.5,0.9)))/
-  quantile(unlist(store1[2501:2865,]),0.5)
-
-(quantile(unlist(store1[2866:3230,]),0.5)-
-    quantile(unlist(store2[2866:3230,]),c(0.1,0.5,0.9)))/
-  quantile(unlist(store1[2866:3230,]),0.5)
-
-(quantile(unlist(store1[2501:3230,]),0.5)-
-    quantile(unlist(store2[2501:3230,]),c(0.1,0.5,0.9)))/
-  quantile(unlist(store1[2501:3230,]),0.5)
-
-panel <- panel + 1
-# par(mar = c(6,4,1,1))
-## yearly incidence estimates
-## baseline year 2136:2500
-## year 1 follow up 2501:2865
-## year 2 follow up 2866:323
-baseC = c(store_inc1[2136:2500,i+1])
-baseT = c(store_inc2[2136:2500,i+1])
-FOL_C1 = c(store_inc1[2501:2865,i+1])
-FOL_T1 = c(store_inc2[2501:2865,i+1])
-FOL_C2 = c(store_inc1[2866:3230,i+1])
-FOL_T2 = c(store_inc2[2866:3230,i+1])
-
-(quantile(unlist(store_inc1[2501:2865,]),0.5) -
-    quantile(unlist(store_inc2[2501:2865,]),c(0.1,0.5,0.9)))/
-  quantile(unlist(store_inc1[2501:2865,]),0.5)
-
-(quantile(unlist(store_inc1[2866:3230,]),0.5) -
-    quantile(unlist(store_inc2[2866:3230,]),c(0.1,0.5,0.9)))/
-  quantile(unlist(store_inc1[2866:3230,]),0.5)
+baseC = as.numeric(store1[2400,2:51])
+baseT = as.numeric(store2[2400,2:51])
+FOL_C1 = as.numeric(store1[2765,2:51])
+FOL_T1 = as.numeric(store2[2765,2:51])
+FOL_C2 = as.numeric(store1[3130,2:51])
+FOL_T2 = as.numeric(store2[3130,2:51])
 
 boxplot(baseC,baseT,NA,FOL_C1,FOL_T1,NA,FOL_C2,FOL_T2, 
         col = c("grey80","grey30","white",
                 "darkblue","darkred","white",
                 "darkblue","darkred"),
-        # xlim = c(2000,3400),#ylim = c(0,1),
-        ylab = "Model simulated clinical incidence per 1,000 children (0.5 - 10 years)",
-        xlab = "",xaxt = "n", yaxt = "n")
+        # xlim = c(2000,3400),
+        ylim = c(0,0.5),
+        ylab = "",
+        xlab = "",xaxt = "n", 
+        yaxt = "n")
 labs <- c("Baseline control","Baseline SE","",
           "Year 1 control","Year 1 SE","","Year 2 control","Year 2 SE")
 
+mtext("Model simulated slide prevalence",side = 2, line = 3.2, cex = 0.7) 
+mtext("six months to 10 years",side = 2, line = 2, cex = 0.7)
+
+axis(2, las = 2, at = seq(0,0.4,0.1),
+     labels = seq(0, 40, 10))
+
 x <- seq(1, 8, by = 1)
+
 
 # draw axis without labels
 axis(1, at = x, labels = FALSE)
@@ -1351,9 +1307,115 @@ text(x = x,
      srt = 45,
      adj = 1,
      xpd = TRUE)
-axis(2, las = 2, at = seq(0,10,by = 2))
 
+# plot(output0$prpf ~ output0$timestep, type = "l", 
+#      col = "white",lwd = 2,
+#      xlim = c(2000,3400), ylim = c(0,0.6),
+#      ylab = "Model simulated estimate for prevalence in 0.5 - 10 years (%)",
+#      xlab = "",xaxt = "n", yaxt = "n")
+# axis(1, at = seq(1,10*365,by = 365),labels = seq(2015,2024,by = 1))
+# axis(2, las = 2, at = seq(0,1,by = 0.2),labels = seq(0,100,by = 20))
+# # lines(output1$prpf ~ output1$timestep, col = "blue", lwd = 2)
+# abline(v = spatial_emanator_timesteps, lty = 2, col = "grey80")
+# # abline(v = spatial_emanator_timesteps[1]+365, lty = 2, col = "grey80")
+# # abline(v = spatial_emanator_timesteps[1]+365+365, lty = 2, col = "grey80")
+# abline(v = bednetstimesteps, lty = 2, col = "grey30")
+# 
+# for(i in 1:50){
+#   
+#   lines(store1[,i+1] ~ output0$timestep, col = adegenet::transp("blue",0.2), lwd = 2)
+#   lines(store2[,i+1] ~ output0$timestep, col = adegenet::transp("darkred",0.2), lwd = 1)
+#   
+# }
 
+mtext(labels[panel],
+      side = 3, line = 0.5, adj = 0,
+      font = 2, cex = 1)
+
+## prevalence reductions
+quantile(unlist(store1[2501:2865,]),c(0.025,0.5,0.975))
+quantile(unlist(store2[2501:2865,]),c(0.025,0.5,0.975))
+
+(quantile(unlist(store1[2501:2865,]),0.5)-
+    quantile(unlist(store2[2501:2865,]),c(0.025,0.5,0.975)))/
+  quantile(unlist(store1[2501:2865,]),0.5)
+
+(quantile(unlist(store1[2866:3230,]),0.5)-
+    quantile(unlist(store2[2866:3230,]),c(0.025,0.5,0.975)))/
+  quantile(unlist(store1[2866:3230,]),0.5)
+
+(quantile(unlist(store1[2501:3230,]),0.5)-
+    quantile(unlist(store2[2501:3230,]),c(0.025,0.5,0.975)))/
+  quantile(unlist(store1[2501:3230,]),0.5)
+
+panel <- panel + 1
+# par(mar = c(6,4,1,1))
+## yearly incidence estimates
+## baseline year 2136:2500
+## year 1 follow up 2501:2865
+## year 2 follow up 2866:323
+# baseC = c(store_inc1[2136:2500,i+1])
+# baseT = c(store_inc2[2136:2500,i+1])
+# FOL_C1 = c(store_inc1[2501:2865,i+1])
+# FOL_T1 = c(store_inc2[2501:2865,i+1])
+# FOL_C2 = c(store_inc1[2866:3230,i+1])
+# FOL_T2 = c(store_inc2[2866:3230,i+1])
+# 
+# (quantile(unlist(store_inc1[2501:2865,]),0.5) -
+#     quantile(unlist(store_inc2[2501:2865,]),c(0.025,0.5,0.975)))/
+#   quantile(unlist(store_inc1[2501:2865,]),0.5)
+# 
+# (quantile(unlist(store_inc1[2866:3230,]),0.5) -
+#     quantile(unlist(store_inc2[2866:3230,]),c(0.025,0.5,0.975)))/
+#   quantile(unlist(store_inc1[2866:3230,]),0.5)
+# 
+# boxplot(baseC,baseT,NA,FOL_C1,FOL_T1,NA,FOL_C2,FOL_T2, 
+#         col = c("grey80","grey30","white",
+#                 "darkblue","darkred","white",
+#                 "darkblue","darkred"),
+#         # xlim = c(2000,3400),#ylim = c(0,1),
+#         ylab = "Model simulated clinical incidence per 1,000 children (0.5 - 10 years)",
+#         xlab = "",xaxt = "n", yaxt = "n")
+# labs <- c("Baseline control","Baseline SE","",
+#           "Year 1 control","Year 1 SE","","Year 2 control","Year 2 SE")
+# 
+# x <- seq(1, 8, by = 1)
+# 
+# # draw axis without labels
+# axis(1, at = x, labels = FALSE)
+# 
+# # add rotated labels
+# text(x = x,
+#      y = par("usr")[3] - 0.05 * diff(par("usr")[3:4]),
+#      labels = labs,
+#      srt = 45,
+#      adj = 1,
+#      xpd = TRUE)
+# axis(2, las = 2, at = seq(0,10,by = 2))
+
+plot(output0$inc_6m_10y ~ output0$timestep, type = "l",
+     col = "white",lwd = 2,
+     xlim = c(2000,3400), ylim = c(0,15),
+     ylab = "",
+     xlab = "",xaxt = "n", yaxt = "n")
+axis(1, at = seq(1,10*365,by = 365),labels = seq(2015,2024,by = 1))
+axis(2, las = 2, at = seq(0,15,by = 5),labels = seq(0,15,by = 5))
+
+mtext("Model simulated clinical incidence",side = 2, line = 3.2, cex = 0.7) 
+mtext("per 1,000 children six months to 10 years",side = 2, line = 2, cex = 0.7)
+
+# lines(output1$prpf ~ output1$timestep, col = "blue", lwd = 2)
+abline(v = spatial_emanator_timesteps, lty = 2, col = "grey80")
+# abline(v = spatial_emanator_timesteps[1]+365, lty = 2, col = "grey80")
+# abline(v = spatial_emanator_timesteps[1]+365+365, lty = 2, col = "grey80")
+abline(v = bednetstimesteps, lty = 2, col = "grey30")
+
+for(i in 1:50){
+
+  lines(store_inc1[,i+1] ~ output0$timestep, col = adegenet::transp("blue",0.2), lwd = 2)
+  lines(store_inc2[,i+1] ~ output0$timestep, col = adegenet::transp("darkred",0.2), lwd = 1)
+
+}
 mtext(labels[panel],
       side = 3, line = 0.5, adj = 0,
       font = 2, cex = 1)

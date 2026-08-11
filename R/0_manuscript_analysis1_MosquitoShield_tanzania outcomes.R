@@ -38,11 +38,11 @@ extract_params_f = function(p1,p2,p3){
     combo[i] = p1[i] + p3[i]
     
   }
-  combi = as.numeric(quantile(combo,c(0.1,0.5,0.9)))
-  a1 = as.numeric(quantile(p1,c(0.1,0.5,0.9)))
-  a2 = as.numeric(quantile(p2,c(0.1,0.5,0.9)))
+  combi = as.numeric(quantile(combo,c(0.025,0.5,0.975)))
+  a1 = as.numeric(quantile(p1,c(0.025,0.5,0.975)))
+  a2 = as.numeric(quantile(p2,c(0.025,0.5,0.975)))
   ## we want just the coef that indicates difference in outcome due to SE:
-  a3 = as.numeric(quantile(p3,c(0.1,0.5,0.9)))
+  a3 = as.numeric(quantile(p3,c(0.025,0.5,0.975)))
   
   return(list(combi,a1,a2,a3))
 }
@@ -50,8 +50,8 @@ mort_unfed = extract_params_f(MSbtanz$alpha1,MSbtanz$alpha2,MSbtanz$alpha3)
 mort_fed = extract_params_f(MSbtanz$alphaf1,MSbtanz$alphaf2,MSbtanz$alphaf3)
 successful_fed = extract_params_f(MSbtanz$beta1,MSbtanz$beta2,MSbtanz$beta3)
 
-d1 = as.numeric(quantile(MSbtanz$omega1,c(0.1,0.5,0.9)))
-d2 = as.numeric(quantile(MSbtanz$omega2,c(0.1,0.5,0.9)))
+d1 = as.numeric(quantile(MSbtanz$omega1,c(0.025,0.5,0.975)))
+d2 = as.numeric(quantile(MSbtanz$omega2,c(0.025,0.5,0.975)))
 dettered = list(d1,d2)
 
 mortuf_pred_mean <- colMedians(mortuf_pred_draws)                # posterior mean

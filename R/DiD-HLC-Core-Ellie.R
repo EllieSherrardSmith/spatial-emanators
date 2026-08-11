@@ -31,6 +31,7 @@ modL2 = data.frame(count_bites = df_cohort1$anoph_count,
                    household_ID = df_cohort1$household_ID,
                    site_score = df_cohort1$site_score,
                    location = df_cohort1$location)
+dfpanelA = modL2
 # modL2 = na.omit(modL2)
 ###########################################################################
 ########## 1- did with clusters as a random effect #################
@@ -96,7 +97,7 @@ translate_uncert_f = function(num_reps){
                      C1_post_trt = exp(C1_post_trt)
                      ))}
 rrr = translate_uncert_f(num_reps = 1000)
-quantile(rrr[,1],c(0.05, 0.5, 0.95))
+quantile(rrr[,1],c(0.025, 0.5, 0.975))
 
 boxplot(sqrt(modL2$count_bites[modL2$binary == 0 & modL2$arm == 0]),
         sqrt(modL2$count_bites[modL2$binary == 0 & modL2$arm == 1]), NA,
@@ -145,7 +146,7 @@ legend("topright",legend = c("Control","SR"),
 ##############################
 ##
 ## CDC light trap... 
-df_ento = readxl::read_excel("C:/Users/esherrar/Documents/RProjects/spatial-emanators/data/ochomo 2024/DiD-data.xlsx", sheet = "A_D5_LT_anoph_density_Core")
+df_ento = readxl::read_excel("C:/Users/esherrar/Documents/RProjects/spatial-emanators_1/data/ochomo 2024/DiD-data.xlsx", sheet = "A_D5_LT_anoph_density_Core")
 df_ento$date = as.Date(df_ento$date, format = "%d-%m-%y")
 df_ento$year = lubridate::year(df_ento$date)
 
@@ -159,6 +160,8 @@ modL2 = data.frame(count_bites = df_cohort1$anoph_count,
                    binary = df_cohort1$binary,
                    sitea = df_cohort1$cluster_number,
                    household_ID = df_cohort1$household_ID)
+
+dfpanelB = modL2
 # modL2 = na.omit(modL2)
 ###########################################################################
 ########## 1- did with clusters as a random effect #################
@@ -224,7 +227,7 @@ translate_uncert_f = function(num_reps){
                     C1_post_trt = exp(C1_post_trt)
   ))}
 rrr = translate_uncert_f(num_reps = 1000)
-quantile(rrr[,1],c(0.05, 0.5, 0.95))
+quantile(rrr[,1],c(0.025, 0.5, 0.975))
 
 ## repeat for cohrot 2
 df_cohort2 <- subset(df_ento, df_ento$study_phase != "Cohort 1")
@@ -234,6 +237,7 @@ modL2 = data.frame(count_bites = df_cohort2$anoph_count,
                    binary = df_cohort2$binary,
                    sitea = df_cohort2$cluster_number,
                    household_ID = df_cohort2$household_ID)
+dfpanelC = modL2
 # modL2 = na.omit(modL2)
 ###########################################################################
 ########## 1- did with clusters as a random effect #################
@@ -299,4 +303,259 @@ translate_uncert_f = function(num_reps){
                     C1_post_trt = exp(C1_post_trt)
   ))}
 rrr = translate_uncert_f(num_reps = 1000)
-quantile(rrr[,1],c(0.05, 0.5, 0.95))
+quantile(rrr[,1],c(0.025, 0.5, 0.975))
+
+
+######################
+##
+## Supplementary Figure
+
+library(ggplot2)
+library(dplyr)
+
+plot_data <- dfpanelA %>%
+  mutate(
+    Treatment = factor(
+      arm,
+      levels = c(0, 1),
+      labels = c("Control", "Treatment")
+    ),
+    Time = factor(
+      binary,
+      levels = c(0, 1),
+      labels = c("Before", "After")
+    )
+  )
+
+means <- plot_data %>%
+  group_by(Treatment, Time) %>%
+  summarise(
+    mean_density = mean(count_bites, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+ggplot(
+  plot_data,
+  aes(
+    x = Time,
+    y = count_bites,
+    fill = Treatment
+  )
+) +
+  
+  # Boxplots
+  geom_boxplot(
+    position = position_dodge(width = 0.75),
+    width = 0.6,
+    alpha = 0.35,
+    outlier.shape = NA
+  ) +
+  
+  # Individual observations
+  geom_jitter(
+    aes(colour = Treatment),
+    position = position_jitterdodge(
+      jitter.width = 0.15,
+      dodge.width = 0.75
+    ),
+    alpha = 0.45,
+    size = 1.8
+  ) +
+  
+  # Mean trend lines
+  geom_line(
+    data = means,
+    aes(
+      x = Time,
+      y = mean_density,
+      group = Treatment,
+      colour = Treatment
+    ),
+    linewidth = 1.3,
+    inherit.aes = FALSE
+  ) +
+  
+  # Mean points
+  geom_point(
+    data = means,
+    aes(
+      x = Time,
+      y = mean_density,
+      colour = Treatment
+    ),
+    size = 3.5,
+    inherit.aes = FALSE
+  ) +
+  
+  scale_fill_manual(
+    values = c(
+      "Control" = "#999999",
+      "Treatment" = "#E69F00"
+    )
+  ) +
+  
+  scale_colour_manual(
+    values = c(
+      "Control" = "#555555",
+      "Treatment" = "#D55E00"
+    )
+  ) +
+  
+  labs(
+    x = NULL,
+    y = "Mosquito density",
+    fill = NULL,
+    colour = NULL
+  ) +
+  
+  theme_classic(base_size = 14) +
+  theme(
+    legend.position = "top"
+  )
+
+#################################
+##
+##
+
+
+library(dplyr)
+library(ggplot2)
+
+# Add panel labels and combine the three datasets
+
+
+plot_data <- bind_rows(
+  dfpanelA %>% mutate(panel = "Human landing catch"),
+  dfpanelB %>% mutate(panel = "CDC Light trap (year one)"),
+  dfpanelC %>% mutate(panel = "CDC Light trap (year two)")
+) %>%
+  mutate(
+    Treatment = factor(
+      arm,
+      levels = c(0, 1),
+      labels = c("Control", "Treatment")
+    ),
+    
+    Time = factor(
+      binary,
+      levels = c(0, 1, 2),
+      labels = c("Before", "After", "Follow-up 2")
+    ),
+    
+    panel = factor(
+      panel,
+      levels = c("Human landing catch", "CDC Light trap (year one)", "CDC Light trap (year two)")
+    )
+  )
+
+# Calculate means for the trend lines
+means <- plot_data %>%
+  group_by(panel, Treatment, Time) %>%
+  summarise(
+    mean_density = mean(count_bites, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Plot
+ggplot(
+  plot_data,
+  aes(
+    x = Time,
+    y = count_bites,
+    fill = Treatment
+  )
+) +
+  
+  # Boxplots
+  geom_boxplot(
+    aes(group = interaction(Time, Treatment)),
+    position = position_dodge(width = 0.75),
+    width = 0.6,
+    alpha = 0.35,
+    outlier.shape = NA
+  ) +
+  
+  # Individual observations
+  geom_jitter(
+    aes(colour = Treatment),
+    position = position_jitterdodge(
+      jitter.width = 0.15,
+      dodge.width = 0.75
+    ),
+    alpha = 0.45,
+    size = 1.6
+  ) +
+  
+  # Mean trend lines
+  geom_line(
+    data = means,
+    aes(
+      x = Time,
+      y = mean_density,
+      group = Treatment,
+      colour = Treatment
+    ),
+    linewidth = 1.2,
+    inherit.aes = FALSE
+  ) +
+  
+  # Mean points
+  geom_point(
+    data = means,
+    aes(
+      x = Time,
+      y = mean_density,
+      colour = Treatment
+    ),
+    size = 3,
+    inherit.aes = FALSE
+  ) +
+  
+  # Log scale
+  #scale_y_log10() +
+  scale_y_continuous(
+    trans = "log1p",
+    labels = scales::label_number()
+  ) +
+  
+  # Treatment colours
+  scale_fill_manual(
+    values = c(
+      "Control" = "#999999",
+      "Treatment" = "#E69F00"
+    )
+  ) +
+  
+  scale_colour_manual(
+    values = c(
+      "Control" = "#555555",
+      "Treatment" = "#D55E00"
+    )
+  ) +
+  
+  # Three panels
+  facet_wrap(
+    ~ panel,
+    nrow = 1
+  ) +
+  
+  labs(
+    x = NULL,
+    y = "Mosquito density (log scale)",
+    fill = NULL,
+    colour = NULL
+  ) +
+  
+  theme_classic(base_size = 14) +
+  
+  theme(
+    legend.position = "right",
+    strip.background = element_blank(),
+    strip.text = element_text(
+      size = 14,
+      face = "bold"
+    ),
+    axis.text.x = element_text(
+      size = 11
+    )
+  )
