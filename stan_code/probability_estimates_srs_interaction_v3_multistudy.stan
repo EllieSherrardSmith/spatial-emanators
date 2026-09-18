@@ -78,9 +78,8 @@ model {
   phi_f   ~ exponential(1);
   phi_det ~ exponential(1);
 
-  // ---------------------------
   // DATASET 1
-  // ---------------------------
+  // assuming independent
 
   for (n in 1:N1) {
 
@@ -127,10 +126,8 @@ model {
                                    beta_det);
   }
 
-  // ---------------------------
   // DATASET 2
-  // ---------------------------
-
+  
   for (n in 1:N2) {
 
     real p_duf =
