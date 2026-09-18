@@ -801,14 +801,16 @@ observed_outcomes <- hut_outcomes_hill |>
       "Placebo",
       "Emanator"
     ),
-    value = count / total
+    value = count / total,
+    n = total
   ) |>
   select(
     time,
     arm,
     row,
     mechanism,
-    value
+    value,
+    n
   )
 
 
@@ -834,6 +836,7 @@ observed_deterrence <- hut_outcomes_hill |>
   select(
     time,
     arm,
+    n,
     row,
     mechanism,
     value
@@ -896,14 +899,16 @@ p_outcomes <- ggplot(
   
   geom_point(
     data = observed_plot,
-    aes(x = time, y = value),
+    aes(x = time, y = value, size = n),
     shape = 21,
     fill = "white",
     colour = "black",
-    size = 2,
     stroke = 0.7,
     inherit.aes = FALSE
   ) +
+  scale_size_continuous(
+    range = c(1, 5)
+  )+
   
   facet_grid(
     row ~ mechanism,
@@ -1006,7 +1011,7 @@ p_mechanisms <- ggplot(
   ) +
   
   labs(
-    x = "Time",
+    x = "Time in days",
     y = "Probabilities (%)"
   ) +
   
