@@ -202,8 +202,8 @@ stan_data_hill <- prepare_stan_data(real_hill, T_ref = 50)
 stan_data_hill <- prepare_stan_data(real_hillB, T_ref = 50)
 #
 library(cmdstanr)
-# mod_hill_eps <- cmdstan_model("stan_code/SE_multinomial_fits/multinomial_hill_eps.stan")
-mod_hill_eps <- cmdstan_model("stan_code/SE_multinomial_fits/multinomial_hill_eps_v2.stan")
+# mod_hill_eps <- cmdstan_model("stan_code/SE_multinomial_fits/multinomial_hill_eps_v2.stan") ##GOOD
+mod_hill_eps <- cmdstan_model("stan_code/SE_multinomial_fits/multinomial_hill_eps_v3.stan")
 fit_hill_eps <- mod_hill_eps$sample(data = stan_data_hill, chains = 4, iter_warmup = 1000, iter_sampling = 1000, seed = 1, parallel_chains = 4)
 
 ## And interrogate the results
@@ -555,11 +555,11 @@ rSE <- mu_det + (1 - mu_det) * mu_R
 dSE <- (1 - mu_det) * mu_K 
 bSE <- 1 - rSE - dSE 
 
-prob_kill_after <- bSE * mu_M 
+prob_kill_after <- (1 - mu_R - mu_K) * mu_M# bSE * mu_M 
 #
 
 sSE <- (1 - mu_M)
-prob_survive <- bSE * sSE
+prob_survive <- (1 - mu_R - mu_K) * (1 - mu_M)# bSE * sSE
 
 
 # ------------------------------------------------------------
@@ -991,7 +991,7 @@ p_mechanisms <- ggplot(
   facet_grid(
     row ~ mechanism, 
     labeller = labeller( 
-      row = c( "Probabilities" = "gambiae" ), 
+      row = c( "Probabilities" = "arabiensis" ), 
       mechanism = mechanism_labels 
       ) 
     ) +
