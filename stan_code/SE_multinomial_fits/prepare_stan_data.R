@@ -15,7 +15,7 @@ library(tidyr)
 #        (nested_hill_eps40_model.stan, dirichlet_multinomial_hill_eps40_model.stan)
 #        -- the time by which evidence indicates effectively no residual effect.
 #        Not used by the plain nested_hill_model.stan / dirichlet_multinomial_hill_model.stan.
-prepare_stan_data <- function(raw, T_ref = 40) {
+prepare_stan_data <- function(raw, T_ref = 400) {
   
   raw <- raw %>% mutate(N = au + du + df + f)
   
