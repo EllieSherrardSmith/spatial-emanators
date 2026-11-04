@@ -1071,7 +1071,7 @@ store_eir2ara = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators
 store_eir2fun = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir2fun")
 
 
-plot(store_ara1[,2] ~ output0$timestep, type = "l", 
+plot(store_ara1[,2] ~ store_ara1[,1], type = "l", 
      col = "white",lwd = 2,
      xlim = c(2000,3400), ylim = c(0,400000),
      ylab = "Mosquito densities",
@@ -1082,14 +1082,18 @@ axis(1, at = seq(1,10*365,by = 365),labels = seq(2015,2024,by = 1))
 
 for(i in 1:50){
   
-  lines(store_ara1[,i+1] ~ output0$timestep, col = adegenet::transp("darkblue",0.2), lwd = 2)
-  lines(store_ara2[,i+1] ~ output0$timestep, col = adegenet::transp("darkred",0.2), lwd = 2)
-  lines(store_gam1[,i+1] ~ output0$timestep, col = adegenet::transp("blue",0.2), lwd = 1)
-  lines(store_gam2[,i+1] ~ output0$timestep, col = adegenet::transp("red",0.2), lwd = 1)
-  lines(store_fun1[,i+1] ~ output0$timestep, col = adegenet::transp("lightblue",0.2), lwd = 1)
-  lines(store_fun2[,i+1] ~ output0$timestep, col = adegenet::transp("pink",0.2), lwd = 1)
+  lines(store_ara1[,i+1] ~ store_ara1[,1], col = adegenet::transp("darkblue",0.2), lwd = 2)
+  lines(store_ara2[,i+1] ~ store_ara1[,1], col = adegenet::transp("darkred",0.2), lwd = 2)
+  lines(store_gam1[,i+1] ~ store_ara1[,1], col = adegenet::transp("blue",0.2), lwd = 1)
+  lines(store_gam2[,i+1] ~ store_ara1[,1], col = adegenet::transp("red",0.2), lwd = 1)
+  lines(store_fun1[,i+1] ~ store_ara1[,1], col = adegenet::transp("lightblue",0.2), lwd = 1)
+  lines(store_fun2[,i+1] ~ store_ara1[,1], col = adegenet::transp("pink",0.2), lwd = 1)
   
 }
+
+spatial_emanator_timesteps = round(seq(310+1095+1095, 310+1095+1095+730, by = 30),0) # Each round of Mosquito Shield spatial emanator is implemented in the 1st and second year.
+
+
 abline(v = spatial_emanator_timesteps[1], lty = 2, col = "grey80")
 abline(v = spatial_emanator_timesteps[1]+365, lty = 2, col = "grey80")
 # abline(v = spatial_emanator_timesteps[1]+365+365, lty = 2, col = "grey80")
@@ -1184,7 +1188,15 @@ summary_fun_both = function(store_objectA,
 }
 store_objectA = store_inc1
 store_objectB = store_inc2
-# mean(fc1[1:730,2] - ft1[1:730,3])/mean(fc1[1:730,2])
+fc1 = ft1 = array(dim = c(730,3))
+for(t in 2501:3230){
+  fc1[t-2500,] = quantile(as.numeric(store_inc1[t,2:51]),c(0.025,0.5,0.975), na.rm = TRUE) 
+  ft1[t-2500,] = quantile(as.numeric(store_inc2[t,2:51]),c(0.025,0.5,0.975), na.rm = TRUE)
+}
+
+mean(fc1[1:730,2] - ft1[1:730,1])/mean(fc1[1:730,2])
+mean(fc1[1:730,2] - ft1[1:730,2])/mean(fc1[1:730,2])
+mean(fc1[1:730,2] - ft1[1:730,3])/mean(fc1[1:730,2])
 
 summary_fun_both(store1,store2)
 summary_fun_both(store_inc1,store_inc2)
@@ -1308,7 +1320,7 @@ text(x = x,
      adj = 1,
      xpd = TRUE)
 
-# plot(output0$prpf ~ output0$timestep, type = "l", 
+# plot(output0$prpf ~ store_ara1[,1], type = "l", 
 #      col = "white",lwd = 2,
 #      xlim = c(2000,3400), ylim = c(0,0.6),
 #      ylab = "Model simulated estimate for prevalence in 0.5 - 10 years (%)",
@@ -1323,8 +1335,8 @@ text(x = x,
 # 
 # for(i in 1:50){
 #   
-#   lines(store1[,i+1] ~ output0$timestep, col = adegenet::transp("blue",0.2), lwd = 2)
-#   lines(store2[,i+1] ~ output0$timestep, col = adegenet::transp("darkred",0.2), lwd = 1)
+#   lines(store1[,i+1] ~ store_ara1[,1], col = adegenet::transp("blue",0.2), lwd = 2)
+#   lines(store2[,i+1] ~ store_ara1[,1], col = adegenet::transp("darkred",0.2), lwd = 1)
 #   
 # }
 
@@ -1393,7 +1405,7 @@ panel <- panel + 1
 #      xpd = TRUE)
 # axis(2, las = 2, at = seq(0,10,by = 2))
 
-plot(output0$inc_6m_10y ~ output0$timestep, type = "l",
+plot(output0$inc_6m_10y ~ store_ara1[,1], type = "l",
      col = "white",lwd = 2,
      xlim = c(2000,3400), ylim = c(0,15),
      ylab = "",
@@ -1412,8 +1424,8 @@ abline(v = bednetstimesteps, lty = 2, col = "grey30")
 
 for(i in 1:50){
 
-  lines(store_inc1[,i+1] ~ output0$timestep, col = adegenet::transp("blue",0.2), lwd = 2)
-  lines(store_inc2[,i+1] ~ output0$timestep, col = adegenet::transp("darkred",0.2), lwd = 1)
+  lines(store_inc1[,i+1] ~ store_ara1[,1], col = adegenet::transp("blue",0.2), lwd = 2)
+  lines(store_inc2[,i+1] ~ store_ara1[,1], col = adegenet::transp("darkred",0.2), lwd = 1)
 
 }
 mtext(labels[panel],

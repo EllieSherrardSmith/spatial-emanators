@@ -132,17 +132,20 @@ for(i in 1:nrow(dtaMS)){
 dtaMS <- dtaMS[order(dtaMS$treatment, 
                      dtaMS$time_index, 
                      dtaMS$species), ]
+dtaMS = subset(dtaMS, dtaMS$species == "arabiensis")
 
-dtaMS_summary <- dtaMS %>%
-  group_by(treatment, time_index, species) %>%
-  summarise(
-    across(c("aliveunfed24",
-             "alivefed24",
-             "deadunfed24",
-             "deadfed24",
-             total), sum, na.rm = TRUE)
-  )
-dtaMS_summary = subset(dtaMS_summary, dtaMS_summary$species == "arabiensis")
+
+
+# dtaMS_summary <- dtaMS %>%
+#   group_by(treatment, time_index, species) %>%
+#   summarise(
+#     across(c("aliveunfed24",
+#              "alivefed24",
+#              "deadunfed24",
+#              "deadfed24",
+#              total), sum, na.rm = TRUE)
+#   )
+# dtaMS_summary = subset(dtaMS_summary, dtaMS_summary$species == "arabiensis")
 
 ##
 ##Ngufor (gambiae)
@@ -185,6 +188,17 @@ real_hill = data.frame(HutTrial = rep(1, nrow(dtaMS)),
                        du = dtaMS$deadunfed24,
                        df = dtaMS$deadfed24,
                        f = dtaMS$alivefed24)
+real_hill$total = real_hill$au + real_hill$df + real_hill$du + real_hill$f
+summarised_data <- real_hill %>%
+  group_by(HutTrial, Hut, Treatment, Time) %>%
+  summarise(
+    au = sum(au, na.rm = TRUE),
+    du = sum(du, na.rm = TRUE),
+    df = sum(df, na.rm = TRUE),
+    f = sum(f, na.rm = TRUE),
+    total = sum(total, na.rm = TRUE),
+    .groups = "drop"
+  )
 
 real_hillB = data.frame(HutTrial = c(rep(1, nrow(dtbMS1)),rep(2, nrow(dtbMS2))),
                         Hut = c(dtbMS1$hut,dtbMS2$hut),
@@ -198,7 +212,7 @@ real_hillB = data.frame(HutTrial = c(rep(1, nrow(dtbMS1)),rep(2, nrow(dtbMS2))),
 
 # source("R/prepare_stan_data.R")     # unchanged -- same raw format, same aggregation logic
 # stan_data_hill <- prepare_stan_data(raw_hill, T_ref = 35)
-stan_data_hill <- prepare_stan_data(real_hill, T_ref = 50)
+stan_data_hill <- prepare_stan_data(summarised_data, T_ref = 50)
 stan_data_hill <- prepare_stan_data(real_hillB, T_ref = 50)
 #
 library(cmdstanr)
@@ -551,17 +565,25 @@ mu_R   <- p_R
 mu_K   <- p_K
 mu_M   <- p_M
 
-rSE <- mu_det + (1 - mu_det) * mu_R 
-dSE <- (1 - mu_det) * mu_K 
-bSE <- 1 - rSE - dSE 
+rSe = mu_det + (1 - mu_det) * (1 - mu_K) * mu_R * (1-mu_M) #: mosquitos must survive in order to be counted as repeating.
+dSe = (1 - mu_det) * (mu_K + (1-mu_K) * mu_R * mu_M) #: mosquitos that are repelled can also die without feeding
+bSe = 1 - rSe - dSe #
 
-prob_kill_after <- (1 - mu_R - mu_K) * mu_M# bSE * mu_M 
-#
+## Given a mosquito has bitten:
+sSe = 1 - mu_M 
 
-sSE <- (1 - mu_M)
-prob_survive <- (1 - mu_R - mu_K) * (1 - mu_M)# bSE * sSE
+# rSE <- mu_det + (1 - mu_det) * mu_R 
+# dSE <- (1 - mu_det) * mu_K 
+# bSE <- 1 - rSE - dSE 
 
+prob_kill_after <- bSe * mu_M 
+prob_survive <- bSe * sSe
 
+prob_in_hut_repel <- (1 - mu_K) * mu_R * (1-mu_M)
+prob_in_hut_die_before <- (mu_K + (1-mu_K) * mu_R * mu_M)
+prob_in_hut_feed <- 1 - prob_in_hut_repel - prob_in_hut_die_before
+prob_in_hut_feed_die <- prob_in_hut_feed * mu_M
+prob_in_hut_feed_survive <- prob_in_hut_feed * (1 - mu_M)
 # ------------------------------------------------------------
 # PLACEBO
 # ------------------------------------------------------------
@@ -673,7 +695,7 @@ probabilities_plot <- dplyr::bind_rows(
   ),
   
   matrix_long(
-    mu_R,
+    prob_in_hut_repel,
     "repellence",
     "Probabilities",
     NA,
@@ -681,7 +703,7 @@ probabilities_plot <- dplyr::bind_rows(
   ),
   
   matrix_long(
-    mu_K,
+    prob_in_hut_die_before,
     "kill before",
     "Probabilities",
     NA,
@@ -689,7 +711,7 @@ probabilities_plot <- dplyr::bind_rows(
   ),
   
   matrix_long(
-    prob_kill_after,
+    prob_in_hut_feed_die,
     "kill after",
     "Probabilities",
     NA,
@@ -697,7 +719,7 @@ probabilities_plot <- dplyr::bind_rows(
   ),
   
   matrix_long(
-    prob_survive,
+    prob_in_hut_feed_survive,
     "survive",
     "Probabilities",
     NA,

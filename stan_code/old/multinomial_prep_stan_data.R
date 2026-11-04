@@ -11,11 +11,7 @@ library(dplyr)
 library(tidyr)
 
 # raw: one row per hut-night, columns HutTrial, Hut, Treatment, Time, au, du, df, f
-# T_ref: reference time (days) used by the eps40-parametrised Hill decay models
-#        (nested_hill_eps40_model.stan, dirichlet_multinomial_hill_eps40_model.stan)
-#        -- the time by which evidence indicates effectively no residual effect.
-#        Not used by the plain nested_hill_model.stan / dirichlet_multinomial_hill_model.stan.
-prepare_stan_data <- function(raw, T_ref = 400) {
+prepare_stan_data <- function(raw) {
   
   raw <- raw %>% mutate(N = au + du + df + f)
   
@@ -70,12 +66,7 @@ prepare_stan_data <- function(raw, T_ref = 400) {
     
     # weakly informative default; recompute from your chosen mean/effective sample size
     pi_prior_a = 0.699 * 6,
-    pi_prior_b = (1 - 0.699) * 6,
-    
-    # only consumed by the eps parametrised Hill decay models
-    T_ref = T_ref
-    
-    
+    pi_prior_b = (1 - 0.699) * 6
   )
 }
 

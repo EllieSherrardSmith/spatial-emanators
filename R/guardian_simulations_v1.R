@@ -212,16 +212,8 @@ dtaMS <- dtaMS[order(dtaMS$Treatment,
                      dtaMS$time_index, 
                      dtaMS$species), ]
 
-dtaMS_summary <- dtaMS %>%
-  group_by(Treatment, time_index, species) %>%
-  summarise(
-    across(c("unfed alive 24",
-             "fed alive 24",
-             "unfed dead 24",
-             "fed dead 24",
-             total), sum, na.rm = TRUE)
-  )
-dtaMS_summary = subset(dtaMS_summary, dtaMS_summary$species == "arabiensis")
+
+dtaMS = subset(dtaMS, dtaMS$species == "arabiensis")
 
 real_hill = data.frame(HutTrial = rep(1, nrow(dtaMS)),
                        Hut = dtaMS$hut,
@@ -231,7 +223,18 @@ real_hill = data.frame(HutTrial = rep(1, nrow(dtaMS)),
                        du = dtaMS$`unfed dead 24`,
                        df = dtaMS$`fed dead 24`,
                        f = dtaMS$`fed alive 24`)
+real_hill$total = real_hill$au + real_hill$df + real_hill$du + real_hill$f
 
+summarised_data <- real_hill %>%
+  group_by(HutTrial, Hut, Treatment, Time) %>%
+  summarise(
+    au = sum(au, na.rm = TRUE),
+    du = sum(du, na.rm = TRUE),
+    df = sum(df, na.rm = TRUE),
+    f = sum(f, na.rm = TRUE),
+    total = sum(total, na.rm = TRUE),
+    .groups = "drop"
+  )
 
 # Data preparation: turn the raw hut-row table (Hut Trial, Hut, Treatment, Time,
 # au, du, df, f) into the two data structures the joint Stan model needs:
@@ -304,8 +307,8 @@ prepare_stan_data <- function(raw, T_ref = 400) {
     det_idx = raw$k,
     
     # weakly informative default; recompute from your chosen mean/effective sample size
-    pi_prior_a = 0.699 * 6,
-    pi_prior_b = (1 - 0.699) * 6,
+    pi_prior_a = 6,# 0.699 * 6,
+    pi_prior_b = 4,# (1 - 0.699) * 6,
     
     # only consumed by the eps parametrised Hill decay models
     T_ref = T_ref
@@ -316,35 +319,57 @@ prepare_stan_data <- function(raw, T_ref = 400) {
 
 # source("R/prepare_stan_data.R")     # unchanged -- same raw format, same aggregation logic
 # stan_data_hill <- prepare_stan_data(raw_hill, T_ref = 35)
-stan_data_hilla <- prepare_stan_data(real_hill, T_ref = 400)
+# stan_data_hilla <- prepare_stan_data(summarised_data, T_ref = 400)
 
 #
 library(cmdstanr)
-mod_hill_eps <- cmdstan_model("C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan_code/SE_multinomial_fits/multinomial_hill_eps_v2.stan")
+# mod_hill_eps <- cmdstan_model("C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan_code/SE_multinomial_fits/multinomial_hill_eps_v2.stan")
+# fit_hill_epsAa <- mod_hill_eps$sample(data = stan_data_hilla, chains = 4, iter_warmup = 1000, iter_sampling = 1000, seed = 1, parallel_chains = 4)
+
+# ## And interrogate the results
+# fit_hill_epsAa$summary(variables = c("pi", "nu_u", "nu_f",
+#                                    "R0", "eps_R", "nR",
+#                                    "K0", "eps_K", "nK",
+#                                    "M0", "eps_M", "nM",
+#                                    "delta0", "eps_d", "nd"))
+# 
+# bayesplot::mcmc_trace(fit_hill_epsAa$draws(c("pi", "nu_u", "nu_f",
+#                                            "R0", "eps_R", "nR",
+#                                            "K0", "eps_K", "nK",
+#                                            "M0", "eps_M", "nM",
+#                                            "delta0", "eps_d", "nd")))
+# 
+# 
+# draws_hill_eps_aa <- fit_hill_epsAa$draws(format = "df", variables = c("pi", "nu_u", "nu_f",
+#                                                                   "R0", "eps_R", "nR",
+#                                                                   "K0", "eps_K", "nK",
+#                                                                   "M0", "eps_M", "nM",
+#                                                                   "delta0", "eps_d", "nd"))
+# 
+# 
+##############################
+stan_data_hilla <- prepare_stan_data_seasonal(summarised_data, T_ref = 400,
+                                             period = period, n_harmonics = n_harmonics)
+
+
+#
+# ?install_cmdstan() 
+library(cmdstanr)
+mod_hill_eps <- cmdstan_model("stan_code/multinomial_hill_eps_seasonal.stan")
 fit_hill_epsAa <- mod_hill_eps$sample(data = stan_data_hilla, chains = 4, iter_warmup = 1000, iter_sampling = 1000, seed = 1, parallel_chains = 4)
 
 ## And interrogate the results
-fit_hill_epsAa$summary(variables = c("pi", "nu_u", "nu_f",
-                                   "R0", "eps_R", "nR",
-                                   "K0", "eps_K", "nK",
-                                   "M0", "eps_M", "nM",
-                                   "delta0", "eps_d", "nd"))
+pars <- c("alpha0", "beta_pi", "pi_mean", "nu_u", "nu_f",
+          "R0", "eps_R", "nR",
+          "K0", "eps_K", "nK",
+          "M0", "eps_M", "nM",
+          "delta0", "eps_d", "nd")
 
-bayesplot::mcmc_trace(fit_hill_epsAa$draws(c("pi", "nu_u", "nu_f",
-                                           "R0", "eps_R", "nR",
-                                           "K0", "eps_K", "nK",
-                                           "M0", "eps_M", "nM",
-                                           "delta0", "eps_d", "nd")))
+fit_hill_epsAa$summary(variables = pars)
 
+bayesplot::mcmc_trace(fit_hill_epsAa$draws(pars))
 
-draws_hill_eps_aa <- fit_hill_epsAa$draws(format = "df", variables = c("pi", "nu_u", "nu_f",
-                                                                  "R0", "eps_R", "nR",
-                                                                  "K0", "eps_K", "nK",
-                                                                  "M0", "eps_M", "nM",
-                                                                  "delta0", "eps_d", "nd"))
-
-
-##############################
+draws_hill_eps_aa <- fit_hill_epsAa$draws(format = "df", variables = pars)
 
 
 
@@ -1199,7 +1224,7 @@ panB <- ggplot() +
              aes( x = time, y = prevalence, group = simulation ), 
              colour = scales::alpha("darkred", 0.20), linewidth = 0.7 ) + 
   
-  geom_vline( xintercept = spatial_emanator_timesteps, linetype = "dashed", 
+  geom_vline( xintercept = c(spatial_emanator_timesteps,spatial_emanator_timesteps+365), linetype = "dashed", 
               colour = "grey80", linewidth = 0.7 ) + 
   
   geom_vline( xintercept = bednetstimesteps, 
@@ -1482,7 +1507,7 @@ p_inc <- ggplot() +
   
   # Your intervention/reference lines
   geom_vline(
-    xintercept = spatial_emanator_timesteps,
+    xintercept = c(spatial_emanator_timesteps,spatial_emanator_timesteps+365),
     linetype = "dashed",
     colour = "grey80",
     linewidth = 0.7

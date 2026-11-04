@@ -1,17 +1,23 @@
-// Dirichlet-multinomial version of nested_hill_eps_model.stan -- same tree and same
-// eps-reparametrised Hill decays for mu_R(t), mu_K(t), mu_M(t) and deterrence, but
-// compositional overdispersion is carried by a single shared Dirichlet-multinomial
-// concentration phi instead of per-row Beta-mixing. See nested_hill_eps_model.stan
-// for the full derivation and the reasoning behind the eps reparametrisation.
+// Seasonal version of multinomial_hill_eps_v2.stan -- same tree, same eps-reparametrised
+// Hill decays for mu_R(t), mu_K(t), mu_M(t) and deterrence, same Dirichlet-multinomial
+// composition and beta-binomial deterrence likelihoods. The only change is that the
+// constant biting probability pi is replaced by a seasonal pi(t), a Fourier series on
+// the logit scale in hut-trial day (no calendar dates needed -- day 1 of the trial is
+// simply the phase origin of the cycle):
+//
+//   logit pi(t) = alpha0 + sum_{h=1}^{H} [ beta_cos[h]*cos(2*pi*h*t/P) + beta_sin[h]*sin(2*pi*h*t/P) ]
+//
+// P = `period` (days per seasonal cycle, e.g. 365) and H = `n_harmonics` are data.
+// H = 0 recovers the constant-pi model with pi = inv_logit(alpha0).
 //
 //   f(t) = f0 / (1 + rho*(t/T_ref)^n),  rho = 1/eps - 1   =>   f(T_ref)/f0 = eps exactly
 //
-//   Outcome probabilities (identical to the nested model):
+//   Outcome probabilities (as v2, with pi -> pi(t)):
 //   A  = 1 - (1-nu_u)*(1-mu_K),  hF = 1 - (1-nu_f)*(1-mu_M)
-//   p[alive,unfed] = (1-A)*(1-hF) * ((1-pi) + pi*mu_R)
-//   p[dead, unfed] = A + (1-A)*hF * ((1-pi) + pi*mu_R)
-//   p[dead, fed]   = pi*(1-mu_R)*(1-A)*hF
-//   p[alive,fed]   = pi*(1-mu_R)*(1-A)*(1-hF)
+//   p[alive,unfed] = (1-A)*(1-hF) * ((1-pi(t)) + pi(t)*mu_R)
+//   p[dead, unfed] = A + (1-A)*hF * ((1-pi(t)) + pi(t)*mu_R)
+//   p[dead, fed]   = pi(t)*(1-mu_R)*(1-A)*hF
+//   p[alive,fed]   = pi(t)*(1-mu_R)*(1-A)*(1-hF)
 
 functions {
   // Hill / log-logistic decay, parametrised by the residual fraction eps remaining at
@@ -20,13 +26,25 @@ functions {
     real rho = 1 / eps - 1;
     return f0 / (1 + rho * pow(fmax(t, 0) / T_ref, n));
   }
+
+  // Fourier design matrix: columns [cos_1, sin_1, cos_2, sin_2, ...].
+  // Mirrored by fourier_basis() in R/prepare_stan_data_seasonal.R -- keep them in sync.
+  matrix fourier_basis(vector t, real period, int H) {
+    int N = num_elements(t);
+    matrix[N, 2 * H] X;
+    for (h in 1:H) {
+      X[, 2 * h - 1] = cos(2 * pi() * h * t / period);
+      X[, 2 * h]     = sin(2 * pi() * h * t / period);
+    }
+    return X;
+  }
 }
 data {
   // ---- within-hut compositional data (one row per hut-night) ----
   int<lower=1> J;
   array[J, 4] int<lower=0> y;            // [ ,1]=alive&unfed [ ,2]=dead&unfed [ ,3]=dead&fed [ ,4]=alive&fed
   array[J] int<lower=0, upper=1> arm;    // 0 = control, 1 = treatment
-  vector<lower=0>[J] time;               // time since deployment, per hut-row
+  vector<lower=0>[J] time;               // hut-trial day, per hut-row (drives both decay and season)
 
   // ---- deterrence (entry) data, aggregated to trial-day level ----
   int<lower=1> K;                        // number of trial-day units with both arms present
@@ -38,14 +56,22 @@ data {
   // ---- link from each hut-row to its trial-day deterrence group (for generated quantities) ----
   array[J] int<lower=1, upper=K> det_idx;
 
-  real<lower=0> pi_prior_a;              // Beta prior shape params for pi
-  real<lower=0> pi_prior_b;
-
   real<lower=0> T_ref;                   // reference time (days) at which evidence indicates
                                           // effectively no residual effect -- e.g. 40.
+
+  // ---- seasonal biting probability ----
+  real<lower=0> period;                  // days per seasonal cycle (e.g. 365)
+  int<lower=0> n_harmonics;              // number of Fourier harmonics H
+  int<lower=1> N_grid;                   // grid of trial days on which to report pi(t)
+  vector[N_grid] time_grid;
+}
+transformed data {
+  matrix[J, 2 * n_harmonics] X_pi           = fourier_basis(time, period, n_harmonics);
+  matrix[N_grid, 2 * n_harmonics] X_pi_grid = fourier_basis(time_grid, period, n_harmonics);
 }
 parameters {
-  real<lower=0, upper=1> pi;
+  real alpha0;                           // logit-scale mean biting probability across the cycle
+  vector[2 * n_harmonics] beta_pi;       // Fourier coefficients [cos_1, sin_1, cos_2, sin_2, ...]
 
   real<lower=0, upper=1> nu_u;           // background hazard, before average feeding time (both arms)
   real<lower=0, upper=1> nu_f;           // background hazard, after average feeding time (both arms)
@@ -64,17 +90,21 @@ transformed parameters {
 }
 model {
   // ---- priors ----
-  pi   ~ beta(pi_prior_a, pi_prior_b);
+  alpha0  ~ normal(0, 1.5);   // roughly flat on the probability scale, like the old pi ~ beta(1,1)
+  // alpha0 ~ normal(logit(0.40), 0.2); // centre around 30% consistent with data
+  beta_pi ~ normal(0, 1);     // seasonal amplitude: +/-1 on the logit scale is already a strong season
+  // beta_pi ~ normal(0, 0.15);     // seasonal amplitude: if the baseline probability is 30%, adding a seasonal effect of +1 increases the probability to approximately 52%
   nu_u ~ beta(1, 1);
   nu_f ~ beta(1, 1);
+  // nu_u ~ beta(1, 49);
+  // nu_f ~ beta(1, 49);
 
   R0 ~ beta(2,4); nR ~ lognormal(log(2), 0.5);       // 1,1
   K0 ~ beta(2,4); nK ~ lognormal(log(2), 0.5);       // 3, 17 initial effect ~ 0.2 [beta(4, 16)] BUT [beta(3,17) gives 0.15] and gradual decay: nK > 1
   M0 ~ beta(2,4); nM ~ lognormal(log(2), 0.5);     // 2, 4 initial effect small ish and gradual decay: nK > 1
   delta0 ~ beta(2,4); nd ~ lognormal(log(2), 0.5); // 1,1
 
-  // Strong priors: evidence indicates effectively no residual effect by T_ref (day 40).
-  // Beta(1,199): mean 0.5%, median 0.35%, 95th pct ~1.5%, 99th pct ~2.3% residual at T_ref.
+  // Strong priors: evidence indicates effectively no residual effect by T_ref.
   eps_R ~ beta(1, 49);
   eps_K ~ beta(1, 49);
   eps_M ~ beta(1, 49);
@@ -84,6 +114,8 @@ model {
   rho_delta ~ beta(2, 5);
 
   // ---- within-hut compositional likelihood (Dirichlet-multinomial) ----
+  vector[J] pi_t = inv_logit(alpha0 + X_pi * beta_pi);
+
   for (j in 1:J) {
     real muR_j; real muK_j; real muM_j;
 
@@ -99,10 +131,10 @@ model {
     real hF = 1 - (1 - nu_f) * (1 - muM_j);   // combined hazard of dying after the average feeding time
 
     vector[4] p;
-    p[1] = (1 - A) * (1 - hF) * ((1 - pi) + pi * muR_j);          // alive, unfed
-    p[2] = A + (1 - A) * hF * ((1 - pi) + pi * muR_j);            // dead,  unfed
-    p[3] = pi * (1 - muR_j) * (1 - A) * hF;                       // dead,  fed
-    p[4] = pi * (1 - muR_j) * (1 - A) * (1 - hF);                 // alive, fed
+    p[1] = (1 - A) * (1 - hF) * ((1 - pi_t[j]) + pi_t[j] * muR_j);   // alive, unfed
+    p[2] = A + (1 - A) * hF * ((1 - pi_t[j]) + pi_t[j] * muR_j);     // dead,  unfed
+    p[3] = pi_t[j] * (1 - muR_j) * (1 - A) * hF;                      // dead,  fed
+    p[4] = pi_t[j] * (1 - muR_j) * (1 - A) * (1 - hF);                // alive, fed
 
     y[j] ~ dirichlet_multinomial(p * phi);
   }
@@ -117,6 +149,10 @@ model {
   }
 }
 generated quantities {
+  // seasonal biting probability on the reporting grid, and its cycle average
+  vector[N_grid] pi_grid = inv_logit(alpha0 + X_pi_grid * beta_pi);
+  real pi_mean = mean(pi_grid);
+
   vector[K] delta;
   for (k in 1:K) delta[k] = hill_decay_eps(time_det[k], delta0, eps_d, nd, T_ref);
 
@@ -126,29 +162,33 @@ generated quantities {
   vector[J] p_fed_alive_uncond;
   vector[J] p_deterred_uncond;
 
-  for (j in 1:J) {
-    real muR_j; real muK_j; real muM_j;
-    if (arm[j] == 1) {
-      muR_j = hill_decay_eps(time[j], R0, eps_R, nR, T_ref);
-      muK_j = hill_decay_eps(time[j], K0, eps_K, nK, T_ref);
-      muM_j = hill_decay_eps(time[j], M0, eps_M, nM, T_ref);
-    } else {
-      muR_j = 0; muK_j = 0; muM_j = 0;
+  {
+    vector[J] pi_t = inv_logit(alpha0 + X_pi * beta_pi);
+
+    for (j in 1:J) {
+      real muR_j; real muK_j; real muM_j;
+      if (arm[j] == 1) {
+        muR_j = hill_decay_eps(time[j], R0, eps_R, nR, T_ref);
+        muK_j = hill_decay_eps(time[j], K0, eps_K, nK, T_ref);
+        muM_j = hill_decay_eps(time[j], M0, eps_M, nM, T_ref);
+      } else {
+        muR_j = 0; muK_j = 0; muM_j = 0;
+      }
+
+      real A  = 1 - (1 - nu_u) * (1 - muK_j);
+      real hF = 1 - (1 - nu_f) * (1 - muM_j);
+      real one_minus_delta = (arm[j] == 0) ? 1.0 : (1 - delta[det_idx[j]]);
+
+      real p1 = (1 - A) * (1 - hF) * ((1 - pi_t[j]) + pi_t[j] * muR_j);
+      real p2 = A + (1 - A) * hF * ((1 - pi_t[j]) + pi_t[j] * muR_j);
+      real p3 = pi_t[j] * (1 - muR_j) * (1 - A) * hF;
+      real p4 = pi_t[j] * (1 - muR_j) * (1 - A) * (1 - hF);
+
+      p_unfed_alive_uncond[j] = one_minus_delta * p1;
+      p_unfed_dead_uncond[j]  = one_minus_delta * p2;
+      p_fed_dead_uncond[j]    = one_minus_delta * p3;
+      p_fed_alive_uncond[j]   = one_minus_delta * p4;
+      p_deterred_uncond[j]    = 1 - one_minus_delta;
     }
-
-    real A  = 1 - (1 - nu_u) * (1 - muK_j);
-    real hF = 1 - (1 - nu_f) * (1 - muM_j);
-    real one_minus_delta = (arm[j] == 0) ? 1.0 : (1 - delta[det_idx[j]]);
-
-    real p1 = (1 - A) * (1 - hF) * ((1 - pi) + pi * muR_j);
-    real p2 = A + (1 - A) * hF * ((1 - pi) + pi * muR_j);
-    real p3 = pi * (1 - muR_j) * (1 - A) * hF;
-    real p4 = pi * (1 - muR_j) * (1 - A) * (1 - hF);
-
-    p_unfed_alive_uncond[j] = one_minus_delta * p1;
-    p_unfed_dead_uncond[j]  = one_minus_delta * p2;
-    p_fed_dead_uncond[j]    = one_minus_delta * p3;
-    p_fed_alive_uncond[j]   = one_minus_delta * p4;
-    p_deterred_uncond[j]    = 1 - one_minus_delta;
   }
 }

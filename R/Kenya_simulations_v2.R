@@ -211,16 +211,7 @@ dtaMS <- dtaMS[order(dtaMS$treatment,
                      dtaMS$time_index, 
                      dtaMS$species), ]
 
-dtaMS_summary <- dtaMS %>%
-  group_by(treatment, time_index, species) %>%
-  summarise(
-    across(c("aliveunfed24",
-             "alivefed24",
-             "deadunfed24",
-             "deadfed24",
-             total), sum, na.rm = TRUE)
-  )
-dtaMS_summary = subset(dtaMS_summary, dtaMS_summary$species == "arabiensis")
+dtaMS = subset(dtaMS, dtaMS$species == "arabiensis")
 
 ##
 ##Ngufor (gambiae)
@@ -263,6 +254,18 @@ real_hill = data.frame(HutTrial = rep(1, nrow(dtaMS)),
                        du = dtaMS$deadunfed24,
                        df = dtaMS$deadfed24,
                        f = dtaMS$alivefed24)
+
+real_hill$total = real_hill$au + real_hill$df + real_hill$du + real_hill$f
+summarised_data <- real_hill %>%
+  group_by(HutTrial, Hut, Treatment, Time) %>%
+  summarise(
+    au = sum(au, na.rm = TRUE),
+    du = sum(du, na.rm = TRUE),
+    df = sum(df, na.rm = TRUE),
+    f = sum(f, na.rm = TRUE),
+    total = sum(total, na.rm = TRUE),
+    .groups = "drop"
+  )
 
 real_hillB = data.frame(HutTrial = c(rep(1, nrow(dtbMS1)),rep(2, nrow(dtbMS2))),
                         Hut = c(dtbMS1$hut,dtbMS2$hut),
@@ -345,8 +348,8 @@ prepare_stan_data <- function(raw, T_ref = 40) {
     det_idx = raw$k,
     
     # weakly informative default; recompute from your chosen mean/effective sample size
-    pi_prior_a = 0.699 * 6,
-    pi_prior_b = (1 - 0.699) * 6,
+    pi_prior_a = 6,   #0.699 * 6,
+    pi_prior_b = 4,   #(1 - 0.699) * 6,
     
     # only consumed by the eps parametrised Hill decay models
     T_ref = T_ref
@@ -357,12 +360,12 @@ prepare_stan_data <- function(raw, T_ref = 40) {
 
 # source("R/prepare_stan_data.R")     # unchanged -- same raw format, same aggregation logic
 # stan_data_hill <- prepare_stan_data(raw_hill, T_ref = 35)
-stan_data_hilla <- prepare_stan_data(real_hill, T_ref = 50)
+stan_data_hilla <- prepare_stan_data(summarised_data, T_ref = 50)
 stan_data_hillg <- prepare_stan_data(real_hillB, T_ref = 50)
 
 #
 library(cmdstanr)
-mod_hill_eps <- cmdstan_model("C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan_code/SE_multinomial_fits/multinomial_hill_eps_v2.stan")
+mod_hill_eps <- cmdstan_model("C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan_code/multinomial_hill_eps_v3.stan")
 fit_hill_epsAa <- mod_hill_eps$sample(data = stan_data_hilla, chains = 4, iter_warmup = 1000, iter_sampling = 1000, seed = 1, parallel_chains = 4)
 fit_hill_epsAg <- mod_hill_eps$sample(data = stan_data_hillg, chains = 4, iter_warmup = 1000, iter_sampling = 1000, seed = 1, parallel_chains = 4)
 
@@ -372,7 +375,7 @@ tabTanz = fit_hill_epsAa$summary(variables = c("pi", "nu_u", "nu_f",
                                    "K0", "eps_K", "nK",
                                    "M0", "eps_M", "nM",
                                    "delta0", "eps_d", "nd"))
-write.csv(tabTanz,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan_code/SE_multinomial_fits/tabTanz.csv")
+write.csv(tabTanz,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan_code/tabTanz.csv")
 tabTanz
 bayesplot::mcmc_trace(fit_hill_epsAa$draws(c("pi", "nu_u", "nu_f",
                                            "R0", "eps_R", "nR",
@@ -386,7 +389,7 @@ tabBenin = fit_hill_epsAg$summary(variables = c("pi", "nu_u", "nu_f",
                                      "K0", "eps_K", "nK",
                                      "M0", "eps_M", "nM",
                                      "delta0", "eps_d", "nd"))
-write.csv(tabBenin,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan_code/SE_multinomial_fits/tabBenin.csv")
+write.csv(tabBenin,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan_code/tabBenin.csv")
 tabBenin
 
 bayesplot::mcmc_trace(fit_hill_epsAg$draws(c("pi", "nu_u", "nu_f",
@@ -410,6 +413,14 @@ draws_hill_eps_ag <- fit_hill_epsAg$draws(format = "df", variables = c("pi", "nu
 
 
 
+summary_results <- posterior::summarise_draws(
+  draws_hill_eps_ag,
+  mean,
+  median,
+  sd,
+  ~ quantile(.x, probs = 0.025),
+  ~ quantile(.x, probs = 0.975)
+)
 ##
 ##############################
 
@@ -606,6 +617,7 @@ for(i in 1:50){
   dtsens$epsK_ag[i] = draws_hill_eps_ag$eps_K[rr]
   dtsens$epsM_ag[i] = draws_hill_eps_ag$eps_M[rr]
   dtsens$epsd_ag[i] = draws_hill_eps_ag$eps_d[rr]
+
   }
 
 
@@ -614,6 +626,9 @@ for(i in 1:50){
 dt_row = 1
 spatial_emanator_timesteps = round(seq(310+1095+1095, 310+1095+1095+730, by = 30),0) # Each round of Mosquito Shield spatial emanator is implemented in the 1st and second year.
 
+rr_tests = c(1000,500,300,150,50)
+
+rr = rr_tests[1]
 spatial_emanator_only_params <- set_spatial_emanator( 
   bednetparams,
   timesteps = spatial_emanator_timesteps,
@@ -633,8 +648,8 @@ spatial_emanator_only_params <- set_spatial_emanator(
   eps_M = matrix(rep(c(dtsens$epsM_aa[dt_row],dtsens$epsM_ag[dt_row],dtsens$epsM_ag[dt_row]),each = length(spatial_emanator_timesteps)), ncol=3), # Matrix of impact parameters indoors
   eps_d = matrix(rep(c(dtsens$epsd_aa[dt_row],dtsens$epsd_ag[dt_row],dtsens$epsd_ag[dt_row]),each = length(spatial_emanator_timesteps)), ncol=3), # Matrix of impact parameters indoors
   
-  T_ref = matrix(rep(c(dtsens$T_ref[dt_row],dtsens$T_ref[dt_row],dtsens$T_ref[dt_row]),each = length(spatial_emanator_timesteps)), ncol=3) # Matrix of impact parameters indoors
-  
+  T_ref = matrix(rep(c(dtsens$T_ref[dt_row],dtsens$T_ref[dt_row],dtsens$T_ref[dt_row]),each = length(spatial_emanator_timesteps)), ncol=3), # Matrix of impact parameters indoors
+  retention = rep(rr,length(spatial_emanator_timesteps))
 )
 
 
@@ -749,8 +764,8 @@ for(i in 1:50){
     eps_M = matrix(rep(c(dtsens$epsM_aa[i],dtsens$epsM_ag[i],dtsens$epsM_ag[i]),each = length(spatial_emanator_timesteps)), ncol=3), # Matrix of impact parameters indoors
     eps_d = matrix(rep(c(dtsens$epsd_aa[i],dtsens$epsd_ag[i],dtsens$epsd_ag[i]),each = length(spatial_emanator_timesteps)), ncol=3), # Matrix of impact parameters indoors
     
-    T_ref = matrix(rep(c(dtsens$T_ref[i],dtsens$T_ref[i],dtsens$T_ref[i]),each = length(spatial_emanator_timesteps)), ncol=3) # Matrix of impact parameters indoors
-    
+    T_ref = matrix(rep(c(dtsens$T_ref[i],dtsens$T_ref[i],dtsens$T_ref[i]),each = length(spatial_emanator_timesteps)), ncol=3), # Matrix of impact parameters indoors
+    retention = rep(rr,length(spatial_emanator_timesteps))
   )
   
   
@@ -829,6 +844,8 @@ summary_fun = function(store_objectA,
     fc1[t-2500,] = quantile(as.numeric(store_objectA[t,2:51]),c(0.025,0.5,0.975), na.rm = TRUE) 
     ft1[t-2500,] = quantile(as.numeric(store_objectB[t,2:51]),c(0.025,0.5,0.975), na.rm = TRUE)
   }
+  
+  # pt_prev = (fc1[1:365,2] - ft1[1:365,1])/fc1[1:365,2]
   rel_low = (fc1[1:365,2] - ft1[1:365,1])/fc1[1:365,2]
   rel_mean = (fc1[1:365,2] - ft1[1:365,2])/fc1[1:365,2]
   rel_upp = (fc1[1:365,2] - ft1[1:365,3])/fc1[1:365,2]
@@ -839,8 +856,50 @@ summary_fun = function(store_objectA,
     mean(rel_low, na.rm = TRUE)
   ))
 }
-summary_fun(store1,store2)
-summary_fun(store_inc1,store_inc2)
+
+# pt_red_prev_at_2752days
+(mean(as.numeric(store1[2752,2:51])) - mean(as.numeric(c(store2[2752,2:51]))) ) / 
+  mean(as.numeric(store1[2752,2:51]))
+(mean(as.numeric(store1[2752,2:51])) - quantile(as.numeric(c(store2[2752,2:51])),0.025) ) / 
+  mean(as.numeric(store1[2752,2:51]))
+(mean(as.numeric(store1[2752,2:51])) - quantile(as.numeric(c(store2[2752,2:51])),0.975) ) / 
+  mean(as.numeric(store1[2752,2:51]))
+
+(mean(as.numeric(store1[3117,2:51])) - mean(as.numeric(c(store2[3117,2:51]))) ) / 
+  mean(as.numeric(store1[3117,2:51]))
+(mean(as.numeric(store1[3117,2:51])) - quantile(as.numeric(c(store2[3117,2:51])),0.025) ) / 
+  mean(as.numeric(store1[3117,2:51]))
+(mean(as.numeric(store1[3117,2:51])) - quantile(as.numeric(c(store2[3117,2:51])),0.975) ) / 
+  mean(as.numeric(store1[3117,2:51]))
+
+# mean reduction in incidence
+fc1 = ft1 = array(dim = c(365,3))
+for(t in 2501:2865){
+  fc1[t-2500,] = quantile(as.numeric(store_inc1[t,2:51]),c(0.025,0.5,0.975), na.rm = TRUE) 
+  ft1[t-2500,] = quantile(as.numeric(store_inc2[t,2:51]),c(0.025,0.5,0.975), na.rm = TRUE)
+}
+(mean(fc1[,2]) - mean(ft1[,2]) )/mean(fc1[,2])
+(mean(fc1[,2]) - mean(ft1[,1]) )/mean(fc1[,2])
+(mean(fc1[,2]) - mean(ft1[,3]) )/mean(fc1[,2])
+
+fc1 = ft1 = array(dim = c(365,3))
+for(t in 2866:3230){
+  fc1[t-2865,] = quantile(as.numeric(store_inc1[t,2:51]),c(0.025,0.5,0.975), na.rm = TRUE) 
+  ft1[t-2865,] = quantile(as.numeric(store_inc2[t,2:51]),c(0.025,0.5,0.975), na.rm = TRUE)
+}
+(mean(fc1[,2]) - mean(ft1[,2]) )/mean(fc1[,2])
+(mean(fc1[,2]) - mean(ft1[,1]) )/mean(fc1[,2])
+(mean(fc1[,2]) - mean(ft1[,3]) )/mean(fc1[,2])
+
+fc1 = ft1 = array(dim = c(730,3))
+for(t in 2501:3231){
+  fc1[t-2501,] = quantile(as.numeric(store_inc1[t,2:51]),c(0.025,0.5,0.975), na.rm = TRUE) 
+  ft1[t-2501,] = quantile(as.numeric(store_inc2[t,2:51]),c(0.025,0.5,0.975), na.rm = TRUE)
+}
+(mean(fc1[,2]) - mean(ft1[,2]) )/mean(fc1[,2])
+(mean(fc1[,2]) - mean(ft1[,1]) )/mean(fc1[,2])
+(mean(fc1[,2]) - mean(ft1[,3]) )/mean(fc1[,2])
+
 summary_fun(store_ara1,store_ara2)
 summary_fun(store_gam1,store_gam2)
 summary_fun(store_fun1,store_fun2)
@@ -866,14 +925,9 @@ summary_fun_y2 = function(store_objectA,
     mean(rel_low, na.rm = TRUE)
   ))
 }
-summary_fun_y2(store1,store2)
-summary_fun_y2(store_inc1,store_inc2)
 summary_fun_y2(store_ara1,store_ara2)
 summary_fun_y2(store_gam1,store_gam2)
 summary_fun_y2(store_fun1,store_fun2)
-summary_fun_y2(store_eir1gam,store_eir2gam)
-summary_fun_y2(store_eir1ara,store_eir2ara)
-summary_fun_y2(store_eir1fun,store_eir2fun)
 
 summary_fun_both = function(store_objectA,
                             store_objectB){
@@ -893,20 +947,6 @@ summary_fun_both = function(store_objectA,
     mean(rel_low, na.rm = TRUE)
   ))
 }
-store_objectA = store_inc1
-store_objectB = store_inc2
-fc1 = ft1 = array(dim = c(730,3))
-for(t in 2501:3230){
-  fc1[t-2500,] = quantile(as.numeric(store_inc1[t,2:51]),c(0.025,0.5,0.975), na.rm = TRUE) 
-  ft1[t-2500,] = quantile(as.numeric(store_inc2[t,2:51]),c(0.025,0.5,0.975), na.rm = TRUE)
-}
-
-mean(fc1[1:730,2] - ft1[1:730,1])/mean(fc1[1:730,2])
-mean(fc1[1:730,2] - ft1[1:730,2])/mean(fc1[1:730,2])
-mean(fc1[1:730,2] - ft1[1:730,3])/mean(fc1[1:730,2])
-
-summary_fun_both(store1,store2)
-summary_fun_both(store_inc1,store_inc2)
 summary_fun_both(store_gam1,store_gam2)
 summary_fun_both(store_ara1,store_ara2)
 
@@ -1277,7 +1317,7 @@ panB <- ggplot() +
                       expand = expansion(mult = c(0, 0.03)) ) + 
   
   labs( x = NULL, 
-        y = "Model simulated prevalence \nin 6 months to 10 years (%)" ) + 
+        y = "Model simulated prevalence \nin children 0.5-10 years (%)" ) + 
   
   theme_classic( base_size = 13 ) + 
   theme( axis.text = element_text( colour = "grey20" ), 

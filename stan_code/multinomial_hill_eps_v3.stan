@@ -38,9 +38,6 @@ data {
   // ---- link from each hut-row to its trial-day deterrence group (for generated quantities) ----
   array[J] int<lower=1, upper=K> det_idx;
 
-  real<lower=0> pi_prior_a;              // Beta prior shape params for pi
-  real<lower=0> pi_prior_b;
-
   real<lower=0> T_ref;                   // reference time (days) at which evidence indicates
                                           // effectively no residual effect -- e.g. 40.
 }
@@ -64,7 +61,7 @@ transformed parameters {
 }
 model {
   // ---- priors ----
-  pi   ~ beta(pi_prior_a, pi_prior_b);
+  pi   ~ beta(1, 1);
   nu_u ~ beta(1, 1);
   nu_f ~ beta(1, 1);
 
