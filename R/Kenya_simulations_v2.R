@@ -803,6 +803,19 @@ for(i in 1:50){
 # saveRDS(store_eir2ara,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir2ara")
 # saveRDS(store_eir2fun,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir2fun")
 
+# readRDS(store1,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store1")
+# readRDS(store_inc1,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_inc1")
+store_ara1 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_ara1")
+store_gam1 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_gam1")
+store_fun1 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_fun1")
+# readRDS(store_eir1gam,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir1gam")
+# readRDS(store_eir1ara,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir1ara")
+# readRDS(store_eir1fun,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_eir1fun")
+# readRDS(store2,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store2")
+# readRDS(store_inc2,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_inc2")
+store_ara2 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_ara2")
+store_gam2 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_gam2")
+store_fun2 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_fun2")
 
 plot(store_ara1[,2] ~ store_ara1[,1], type = "l", 
      col = "white",lwd = 2,
@@ -872,6 +885,8 @@ summary_fun = function(store_objectA,
 (mean(as.numeric(store1[3117,2:51])) - quantile(as.numeric(c(store2[3117,2:51])),0.975) ) / 
   mean(as.numeric(store1[3117,2:51]))
 
+store_inc1 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_inc1")
+store_inc2 = readRDS("C:/Users/esherrar/Documents/RProjects/spatial-emanators/simulations/store_inc2")
 # mean reduction in incidence
 fc1 = ft1 = array(dim = c(365,3))
 for(t in 2501:2865){

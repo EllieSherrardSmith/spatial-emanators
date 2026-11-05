@@ -253,7 +253,30 @@ library(tidyr)
 #        (nested_hill_eps40_model.stan, dirichlet_multinomial_hill_eps40_model.stan)
 #        -- the time by which evidence indicates effectively no residual effect.
 #        Not used by the plain nested_hill_model.stan / dirichlet_multinomial_hill_model.stan.
-prepare_stan_data <- function(raw, T_ref = 400) {
+library(dplyr)
+library(tidyr)
+
+# Fourier design matrix, columns [cos_1, sin_1, cos_2, sin_2, ...].
+# Mirrors fourier_basis() in multinomial_hill_eps_seasonal.stan -- keep them in sync.
+fourier_basis <- function(t, period, n_harmonics) {
+  X <- matrix(0, nrow = length(t), ncol = 2 * n_harmonics)
+  for (h in seq_len(n_harmonics)) {
+    X[, 2 * h - 1] <- cos(2 * pi * h * t / period)
+    X[, 2 * h]     <- sin(2 * pi * h * t / period)
+  }
+  X
+}
+
+# pi(t) for every posterior draw: returns an n_draws x length(t) matrix.
+# alpha0: vector of draws; beta_pi: n_draws x (2*n_harmonics) matrix of draws.
+seasonal_pi <- function(alpha0, beta_pi, t, period, n_harmonics) {
+  X <- fourier_basis(t, period, n_harmonics)
+  plogis(alpha0 + as.matrix(beta_pi) %*% t(X))
+}
+
+# raw: one row per hut-night, columns HutTrial, Hut, Treatment, Time, au, du, df, f
+prepare_stan_data_seasonal <- function(raw, T_ref = 40, period = 365, n_harmonics = 2,
+                                       time_grid = NULL) {
   
   raw <- raw %>% mutate(N = au + du + df + f)
   
@@ -292,6 +315,8 @@ prepare_stan_data <- function(raw, T_ref = 400) {
     raw <- raw %>% filter(!is.na(k))
   }
   
+  if (is.null(time_grid)) time_grid <- seq_len(max(raw$Time))
+  
   list(
     J = nrow(raw),
     y = as.matrix(raw[, c("au", "du", "df", "f")]),
@@ -306,17 +331,17 @@ prepare_stan_data <- function(raw, T_ref = 400) {
     
     det_idx = raw$k,
     
-    # weakly informative default; recompute from your chosen mean/effective sample size
-    pi_prior_a = 6,# 0.699 * 6,
-    pi_prior_b = 4,# (1 - 0.699) * 6,
+    T_ref = T_ref,
     
-    # only consumed by the eps parametrised Hill decay models
-    T_ref = T_ref
-    
-    
+    # seasonal biting probability
+    period = period,
+    n_harmonics = n_harmonics,
+    N_grid = length(time_grid),
+    time_grid = as.numeric(time_grid)
   )
 }
-
+period      <- 365
+n_harmonics <- 2
 # source("R/prepare_stan_data.R")     # unchanged -- same raw format, same aggregation logic
 # stan_data_hill <- prepare_stan_data(raw_hill, T_ref = 35)
 # stan_data_hilla <- prepare_stan_data(summarised_data, T_ref = 400)
@@ -355,7 +380,7 @@ stan_data_hilla <- prepare_stan_data_seasonal(summarised_data, T_ref = 400,
 #
 # ?install_cmdstan() 
 library(cmdstanr)
-mod_hill_eps <- cmdstan_model("stan_code/multinomial_hill_eps_seasonal.stan")
+mod_hill_eps <- cmdstan_model("C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan_code/multinomial_hill_eps_seasonal.stan")
 fit_hill_epsAa <- mod_hill_eps$sample(data = stan_data_hilla, chains = 4, iter_warmup = 1000, iter_sampling = 1000, seed = 1, parallel_chains = 4)
 
 ## And interrogate the results
@@ -371,7 +396,13 @@ bayesplot::mcmc_trace(fit_hill_epsAa$draws(pars))
 
 draws_hill_eps_aa <- fit_hill_epsAa$draws(format = "df", variables = pars)
 
-
+tabTanzGuardian = fit_hill_epsAa$summary(variables = c("pi_mean", "nu_u", "nu_f",
+                                               "R0", "eps_R", "nR",
+                                               "K0", "eps_K", "nK",
+                                               "M0", "eps_M", "nM",
+                                               "delta0", "eps_d", "nd"))
+write.csv(tabTanzGuardian,"C:/Users/esherrar/Documents/RProjects/spatial-emanators/stan_code/tabTanzGuardian.csv")
+tabTanzGuardian
 
 dtsens = data.frame(eir = rep(34.22956,3),
                  Q0 = rep(0.7,3),
@@ -545,7 +576,7 @@ for(i in 1:50){
 ## start and end time time c(3, 6) * year + 1 
 dt_row = 1
 spatial_emanator_timesteps = round(seq(310+1095+1095, 310+1095+1095+730, by = 365),0) # Each round of Mosquito Shield spatial emanator is implemented in the 1st and second year.
-spatial_emanator_timesteps = 310+1095+1095
+# spatial_emanator_timesteps = 310+1095+1095
 spatial_emanator_only_params <- set_spatial_emanator( 
   bednetparams,
   timesteps = spatial_emanator_timesteps,
@@ -565,8 +596,8 @@ spatial_emanator_only_params <- set_spatial_emanator(
   eps_M = matrix(rep(c(dtsens$epsM_aa[dt_row],dtsens$epsM_aa[dt_row],dtsens$epsM_aa[dt_row]),each = length(spatial_emanator_timesteps)), ncol=3), # Matrix of impact parameters indoors
   eps_d = matrix(rep(c(dtsens$epsd_aa[dt_row],dtsens$epsd_aa[dt_row],dtsens$epsd_aa[dt_row]),each = length(spatial_emanator_timesteps)), ncol=3), # Matrix of impact parameters indoors
   
-  T_ref = matrix(rep(c(dtsens$T_ref[dt_row],dtsens$T_ref[dt_row],dtsens$T_ref[dt_row]),each = length(spatial_emanator_timesteps)), ncol=3) # Matrix of impact parameters indoors
-  
+  T_ref = matrix(rep(c(dtsens$T_ref[dt_row],dtsens$T_ref[dt_row],dtsens$T_ref[dt_row]),each = length(spatial_emanator_timesteps)), ncol=3), # Matrix of impact parameters indoors
+  retention = rep(1000,length(spatial_emanator_timesteps))
 )
 
 
@@ -681,8 +712,8 @@ for(i in 1:50){
     eps_M = matrix(rep(c(dtsens$epsM_aa[i],dtsens$epsM_aa[i],dtsens$epsM_aa[i]),each = length(spatial_emanator_timesteps)), ncol=3), # Matrix of impact parameters indoors
     eps_d = matrix(rep(c(dtsens$epsd_aa[i],dtsens$epsd_aa[i],dtsens$epsd_aa[i]),each = length(spatial_emanator_timesteps)), ncol=3), # Matrix of impact parameters indoors
     
-    T_ref = matrix(rep(c(dtsens$T_ref[i],dtsens$T_ref[i],dtsens$T_ref[i]),each = length(spatial_emanator_timesteps)), ncol=3) # Matrix of impact parameters indoors
-    
+    T_ref = matrix(rep(c(dtsens$T_ref[i],dtsens$T_ref[i],dtsens$T_ref[i]),each = length(spatial_emanator_timesteps)), ncol=3), # Matrix of impact parameters indoors
+    retention = rep(1000,length(spatial_emanator_timesteps))
   )
   
   
@@ -1224,7 +1255,10 @@ panB <- ggplot() +
              aes( x = time, y = prevalence, group = simulation ), 
              colour = scales::alpha("darkred", 0.20), linewidth = 0.7 ) + 
   
-  geom_vline( xintercept = c(spatial_emanator_timesteps,spatial_emanator_timesteps+365), linetype = "dashed", 
+  geom_vline( xintercept = c(spatial_emanator_timesteps), linetype = "dashed", 
+              colour = "grey80", linewidth = 0.7 ) + 
+  
+  geom_vline( xintercept = c(spatial_emanator_timesteps+365), linetype = "dashed", 
               colour = "grey80", linewidth = 0.7 ) + 
   
   geom_vline( xintercept = bednetstimesteps, 

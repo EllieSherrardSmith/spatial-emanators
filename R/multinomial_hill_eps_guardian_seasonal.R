@@ -236,6 +236,20 @@ prob_in_hut_feed <- 1 - prob_in_hut_repel - prob_in_hut_die_before
 prob_in_hut_feed_die <- prob_in_hut_feed * mu_M
 prob_in_hut_feed_survive <- prob_in_hut_feed * (1 - mu_M)
 
+
+summaries_of_effects_f = function(x){
+  d1 = mean(x)
+  d2 = as.numeric(quantile(x, c(0.025,0.975)))
+  return(c(d1,d2))
+}
+
+summaries_of_effects_f(prob_deterred_from_entering[,1])
+summaries_of_effects_f(prob_in_hut_die_before[,1])
+summaries_of_effects_f(prob_in_hut_repel[,1])
+summaries_of_effects_f(prob_in_hut_feed_survive[,1])
+summaries_of_effects_f(mu_det[,1])
+
+
 # ------------------------------------------------------------
 # PLACEBO
 # ------------------------------------------------------------

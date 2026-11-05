@@ -217,7 +217,7 @@ stan_data_hill <- prepare_stan_data(real_hillB, T_ref = 50)
 #
 library(cmdstanr)
 # mod_hill_eps <- cmdstan_model("stan_code/SE_multinomial_fits/multinomial_hill_eps_v2.stan") ##GOOD
-mod_hill_eps <- cmdstan_model("stan_code/SE_multinomial_fits/multinomial_hill_eps_v3.stan")
+mod_hill_eps <- cmdstan_model("stan_code/multinomial_hill_eps_v3.stan")
 fit_hill_eps <- mod_hill_eps$sample(data = stan_data_hill, chains = 4, iter_warmup = 1000, iter_sampling = 1000, seed = 1, parallel_chains = 4)
 
 ## And interrogate the results
@@ -579,11 +579,25 @@ sSe = 1 - mu_M
 prob_kill_after <- bSe * mu_M 
 prob_survive <- bSe * sSe
 
+prob_deterred_from_entering = mu_det
 prob_in_hut_repel <- (1 - mu_K) * mu_R * (1-mu_M)
 prob_in_hut_die_before <- (mu_K + (1-mu_K) * mu_R * mu_M)
 prob_in_hut_feed <- 1 - prob_in_hut_repel - prob_in_hut_die_before
 prob_in_hut_feed_die <- prob_in_hut_feed * mu_M
 prob_in_hut_feed_survive <- prob_in_hut_feed * (1 - mu_M)
+
+summaries_of_effects_f = function(x){
+  d1 = mean(x)
+  d2 = as.numeric(quantile(x, c(0.025,0.975)))
+  return(c(d1,d2))
+}
+
+summaries_of_effects_f(prob_deterred_from_entering[,1])
+summaries_of_effects_f(prob_in_hut_die_before[,1])
+summaries_of_effects_f(prob_in_hut_repel[,1])
+summaries_of_effects_f(prob_in_hut_feed_survive[,1])
+
+
 # ------------------------------------------------------------
 # PLACEBO
 # ------------------------------------------------------------
@@ -1069,3 +1083,12 @@ final_plot <- p_outcomes / p_mechanisms +
   plot_annotation( tag_levels = "A" ) 
 
 final_plot
+
+summary_results <- posterior::summarise_draws(
+  draws_hill_eps,
+  mean,
+  median,
+  sd,
+  ~ quantile(.x, probs = 0.025),
+  ~ quantile(.x, probs = 0.975)
+)
