@@ -520,8 +520,9 @@ cases_df <- as.data.frame(cases_matrix) %>%
   )
 retention_values <- seq(50, 500, length.out = 6)
 
+cases_df$phi_indoors = rep(c("0.40", "0.55", "0.70", "0.85", "0.99"),6)
 panelD = ggplot(cases_df,
-                aes(x = phi, y = factor(retention,
+                aes(x = phi_indoors, y = factor(retention,
                                         levels = 1:6,
                                         labels = retention_values),
                     fill = cases_averted)) +

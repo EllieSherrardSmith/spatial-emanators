@@ -1319,7 +1319,7 @@ panB <- ggplot() +
                       expand = expansion(mult = c(0, 0.03)) ) + 
   
   labs( x = NULL, 
-        y = "Model simulated prevalence \nin 6 months to 10 years (%)" ) + 
+        y = "Model simulated prevalence \nin children 0.5-10 years (%)" ) + 
   
   theme_classic(base_size = 11) +
   theme(

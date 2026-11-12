@@ -845,6 +845,9 @@ abline(v = spatial_emanator_timesteps[1]+365, lty = 2, col = "grey80")
 # abline(v = spatial_emanator_timesteps[1]+365+365, lty = 2, col = "grey80")
 abline(v = bednetstimesteps, lty = 2, col = "grey30")
 
+## double checking in the right place
+abline(v = 2752,col = "blue",lwd =2)
+abline(v = 3117,col = "blue",lwd =2)
 
 ## Prepare figures 
 ## Final analysis for MS paper... 
@@ -987,7 +990,7 @@ FOL_C2 = as.numeric(store1[3130,2:51])
 FOL_T2 = as.numeric(store2[3130,2:51])
 
 
-## prevalence reductions
+## over time prev reductions
 quantile(unlist(store1[2501:2865,]),c(0.025,0.5,0.975))
 quantile(unlist(store2[2501:2865,]),c(0.025,0.5,0.975))
 
@@ -1002,7 +1005,6 @@ quantile(unlist(store2[2501:2865,]),c(0.025,0.5,0.975))
 (quantile(unlist(store1[2501:3230,]),0.5)-
     quantile(unlist(store2[2501:3230,]),c(0.025,0.5,0.975)))/
   quantile(unlist(store1[2501:3230,]),0.5)
-
 
 
 #############################
